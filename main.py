@@ -1,8 +1,11 @@
 import requests
 import json
 import time
+import os
 
 def main():
+
+    os.makedirs("Data", exist_ok=True)
     exchangeToSymbols = [
         {
             'exchange': 'Bit2C',
@@ -143,7 +146,7 @@ def main():
     ]
     
     for item in exchangeToSymbols:
-        fileHandler = open('%s_%s.csv' % (item['exchange'], item['symbols']), 'a')
+        fileHandler = open('Data/%s_%s.csv' % (item['exchange'], item['symbols']), 'a')
         fileHandler.write('Time,Last price,Highest bid,Lowest ask,USD rate\n')
     
     while True:
@@ -165,7 +168,7 @@ def main():
                 reqData[item['bid']] = 0.0
                 reqData[item['ask']] = 0.0
         
-            fileHandler = open('%s_%s.csv' % (item['exchange'], item['symbols']), 'a')
+            fileHandler = open('Data/%s_%s.csv' % (item['exchange'], item['symbols']), 'a')
             if item['nested'] != '':
                 fileHandler.write('%s,%f,%f,%f,%f\n' % (time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()), float(reqData[item['nested']][item['lastPrice']]), float(reqData[item['nested']][item['bid']]), float(reqData[item['nested']][item['ask']]), fiatUsdRate))
             else:
