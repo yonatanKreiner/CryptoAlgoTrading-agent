@@ -168,7 +168,7 @@ def main():
                 reqData = json.loads(req.content)
             except ValueError:
                 if item['nested'] != '':
-                    reqData[item['nested'] = {}
+                    reqData[item['nested']] = {}
                     reqData[item['nested']][item['lastPrice']] = 0.0
                     reqData[item['nested']][item['bid']] = 0.0
                     reqData[item['nested']][item['ask']] = 0.0
@@ -178,7 +178,7 @@ def main():
                     reqData[item['ask']] = 0.0
             except ConnectionError:
                 if item['nested'] != '':
-                    reqData[item['nested'] = {}
+                    reqData[item['nested']] = {}
                     reqData[item['nested']][item['lastPrice']] = 0.0
                     reqData[item['nested']][item['bid']] = 0.0
                     reqData[item['nested']][item['ask']] = 0.0
