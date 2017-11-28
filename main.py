@@ -1,6 +1,7 @@
 import requests
 import json
 import time
+from requests.exceptions import ConnectionError
 import os
 
 def main():
@@ -159,14 +160,32 @@ def main():
                 fiatUsdRate = 0.0
             except KeyError:
                 fiatUsdRate = 0.0
+            except ConnectionError:
+                fiatUsdRate = 0.0
         
             try:
                 req = requests.get(item['apiUrl'])
                 reqData = json.loads(req.content)
             except ValueError:
-                reqData[item['lastPrice']] = 0.0
-                reqData[item['bid']] = 0.0
-                reqData[item['ask']] = 0.0
+                if item['nested'] != '':
+                    reqData[item['nested'] = {}
+                    reqData[item['nested']][item['lastPrice']] = 0.0
+                    reqData[item['nested']][item['bid']] = 0.0
+                    reqData[item['nested']][item['ask']] = 0.0
+                else:
+                    reqData[item['lastPrice']] = 0.0
+                    reqData[item['bid']] = 0.0
+                    reqData[item['ask']] = 0.0
+            except ConnectionError:
+                if item['nested'] != '':
+                    reqData[item['nested'] = {}
+                    reqData[item['nested']][item['lastPrice']] = 0.0
+                    reqData[item['nested']][item['bid']] = 0.0
+                    reqData[item['nested']][item['ask']] = 0.0
+                else:
+                    reqData[item['lastPrice']] = 0.0
+                    reqData[item['bid']] = 0.0
+                    reqData[item['ask']] = 0.0
         
             fileHandler = open('Data/%s_%s.csv' % (item['exchange'], item['symbols']), 'a')
             if item['nested'] != '':
