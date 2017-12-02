@@ -3,6 +3,8 @@ import json
 import time
 from requests.exceptions import ConnectionError
 import os
+from os import environ
+from flask import Flask
 
 def main():
 
@@ -196,4 +198,6 @@ def main():
         time.sleep(1)
     
 if __name__ == '__main__':
+    app = Flask(__name__)
+    app.run(environ.get('PORT'))
     main()
