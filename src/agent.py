@@ -1,5 +1,4 @@
 import requests
-import json
 
 
 class Agent:
@@ -25,11 +24,10 @@ class Market:
         self.last_price_key = config['last_price_key']
 
     def get_price(self):
-        res = requests.get(self.api)
-        content = res.content.decode('utf-8')
+        res = requests.get(self.api).json()
+        last_price = res[self.last_price_key]
 
-        if content is not None:
-            last_price = json.loads(content)[self.last_price_key]
+        if last_price is not None:
             return self.convert_symbols(float(last_price))
 
     def convert_symbols(self, price):

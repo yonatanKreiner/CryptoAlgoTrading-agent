@@ -11,7 +11,7 @@
     "api": "https://api.bitfinex.com/v1/pubticker/btcusd",
     "last_price_key": "last_price"
   },
-  "minimum_ratio_difference": 0.05,
+  "minimum_ratio_difference": 0.015,
   "average_ratio": 1.03,
   "sampling_time": 3,
   "ratios_time_length": 24

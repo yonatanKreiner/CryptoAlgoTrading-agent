@@ -1,8 +1,9 @@
-import os
 import json
+import os
 import time
-from agent import Agent
-from ratios_manager import RatiosManager
+
+from src.agent import Agent
+from src.ratios_manager import RatiosManager
 
 
 def log(action, market, price):
@@ -14,7 +15,7 @@ def log(action, market, price):
         mode = 'w'
 
     with open(file_name, mode, encoding='UTF-8') as log_file:
-        log_file.write(action + ': ' + market.market + ', ' + market.symbol + ' at $' + price)
+        log_file.write(action + ': ' + market.market + ', ' + market.symbol + ' at $' + str(price))
 
 
 def trade():
@@ -31,7 +32,7 @@ def trade():
 
         if source_price is None or destination_price is None:
             continue
-            
+
         ratio = source_price / destination_price
         ratio_manager.add_ratio(ratio)
 
