@@ -1,0 +1,18 @@
+{
+  "source": {
+    "market": "Bit2C",
+    "symbol": "BTCNIS",
+    "api": "https://www.bit2c.co.il/Exchanges/BtcNis/Ticker.json",
+    "last_price_key": "ll"
+  },
+  "destination": {
+    "market": "Bitfinex",
+    "symbol": "BTCUSD",
+    "api": "https://api.bitfinex.com/v1/pubticker/btcusd",
+    "last_price_key": "last_price"
+  },
+  "minimum_ratio_difference": 0.05,
+  "average_ratio": 1.03,
+  "sampling_time": 3,
+  "ratios_time_length": 24
+}
