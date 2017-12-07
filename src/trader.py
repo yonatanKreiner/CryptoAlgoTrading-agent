@@ -17,7 +17,7 @@ def activate():
 
 
 def log(action, market, price):
-    with open('./log.txt', 'a', encoding='UTF-8') as log_file:
+    with open('../log.txt', 'a', encoding='UTF-8') as log_file:
         log_file.writelines(action + ': ' + market.market + ', ' + market.symbol + ' at $' + str(price))
 
 
