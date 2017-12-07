@@ -4,13 +4,18 @@ class RatiosManager:
         self.ratios_time_length = ratios_time_length
         self.ratios = []
 
-    def add_ratio(self, ratio):
-        self.ratios.append(ratio)
         sampling_time_minutes = self.sampling_time / 60
         ratios_minutes = self.ratios_time_length * 60
+        self.__list_length = ratios_minutes / sampling_time_minutes
 
-        if len(self.ratios) == ratios_minutes / sampling_time_minutes:
+    def add_ratio(self, ratio):
+        self.ratios.append(ratio)
+
+        if self.is_list_full():
             del self.ratios[0]
 
     def average_ratio(self):
         return sum(self.ratios) / float(len(self.ratios))
+
+    def is_list_full(self):
+        return len(self.ratios) == self.__list_length
