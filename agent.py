@@ -26,9 +26,11 @@ class Market:
 
     def get_price(self):
         res = requests.get(self.api)
-        last_price = json.loads(res.content)[self.last_price_key]
+        content = res.content.decode('utf-8')
 
-        return self.convert_symbols(float(last_price))
+        if content is not None:
+            last_price = json.loads(content)[self.last_price_key]
+            return self.convert_symbols(float(last_price))
 
     def convert_symbols(self, price):
         if self.symbol == 'BTCNIS':
