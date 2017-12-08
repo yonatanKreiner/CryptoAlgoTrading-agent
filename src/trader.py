@@ -5,7 +5,7 @@ from .ratios_manager import RatiosManager
 
 
 def activate():
-    config = json.load(open('./src/agent_config.json'))
+    config = json.load(open('src/agent_config.json'))
     sampling_time = config['sampling_time']
     ratios_time_length = config['ratios_time_length']
 
@@ -17,8 +17,8 @@ def activate():
 
 
 def log(action, market, price):
-    with open('../log.txt', 'a', encoding='UTF-8') as log_file:
-        log_file.writelines(action + ': ' + market.market + ', ' + market.symbol + ' at $' + str(price))
+    with open('./log.txt', 'a', encoding='UTF-8') as log_file:
+        log_file.write(action + ': ' + market.market + ', ' + market.symbol + ' at $' + str(price) + '\r\n')
 
 
 def initialize_ratios_list(agent, ratio_manager):
@@ -41,6 +41,10 @@ def check_ratio(agent, ratio_manager, ready=False):
 
         if ready and agent.can_buy and ratio_manager.average_ratio() - ratio > agent.minimum_ratio_difference:
             log('Buy', agent.source_market, source_price)
+            agent.can_buy = False
         elif ready and not agent.can_buy and ratio_manager.average_ratio() - ratio <= agent.minimum_ratio_difference:
             log('Sell', agent.source_market, source_price)
+            agent.can_buy = True
+
+        print('avarage: ' + str(ratio_manager.average_ratio()) + ', current: ' + str(ratio) + ', difference: ' + str(ratio_manager.average_ratio() - ratio))
         time.sleep(ratio_manager.sampling_time)
