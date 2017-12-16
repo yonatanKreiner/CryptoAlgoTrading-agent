@@ -3,13 +3,23 @@
     "market": "Bit2C",
     "symbol": "BTCNIS",
     "api": "https://www.bit2c.co.il/Exchanges/BtcNis/Ticker.json",
-    "last_price_key": "ll"
+    "buy_fee": "0.005",
+    "sell_fee": "0.005",
+    "last_price_key": "ll",
+    "24_hours_volume_key": "a",
+    "bid_key": "h",
+    "ask_key": "l"
   },
   "destination": {
     "market": "Bitfinex",
     "symbol": "BTCUSD",
     "api": "https://api.bitfinex.com/v1/pubticker/btcusd",
-    "last_price_key": "last_price"
+    "buy_fee": "0",
+    "sell_fee": "0",
+    "last_price_key": "last_price",
+    "24_hours_volume_key": "volume",
+    "bid_key": "bid",
+    "ask_key": "ask"
   },
   "minimum_ratio_difference": 0.02,
   "sampling_time": 3,

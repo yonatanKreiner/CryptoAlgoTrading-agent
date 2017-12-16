@@ -21,12 +21,19 @@ class Market:
         self.market = config['market']
         self.symbol = config['symbol']
         self.api = config['api']
-        self.last_price_key = config['last_price_key']
+        self.price_types = {
+            'last': config['last_price_key'],
+            'bid': config['bid_key'],
+            'ask': config['ask_key']
+        }
+        self.buy_fee = config['buy_fee']
+        self.sell_fee = config['sell_fee']
 
-    def get_price(self):
+    def get_price(self, type):
         try:
             res = requests.get(self.api).json()
             last_price = res[self.last_price_key]
+            price = res[self.price_types[type]]
             return self.convert_symbols(float(last_price))
         except:
             return None

@@ -31,14 +31,18 @@ def initialize_ratios_list(agent, ratio_manager):
             ratio = source_price / destination_price
             ratio_manager.add_ratio(ratio)
 
+def calc_min_ratio_diff(agent):
+    ask_price = agent.get_market_price('source', 'ask')
+    bid_price = agent.get_market_price('source', 'bid')
+    ask_bid_margin = ask - bid
 
 def trade(agent, ratio_manager):
     profit = 0
     buy_time = None
 
     while True:
-        source_price = agent.get_market_price('source')
-        destination_price = agent.get_market_price('destination')
+        source_price = agent.get_market_price('source', 'last')
+        destination_price = agent.get_market_price('destination', 'last')
 
         if source_price is not None and destination_price is not None:
             ratio = source_price / destination_price
