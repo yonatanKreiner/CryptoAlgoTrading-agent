@@ -29,11 +29,11 @@ class OfflineMarket(Market):
         super().__init__(config)
         self.client = MongoClient('mongodb://ariel:ariel@ds127536.mlab.com:27536/collector')
         self.db = self.client.collector
-        self.prices = self.db[self.market.lower()].find({})
+        self.prices = [x['price'] for x in self.db[self.market.lower()].find({}, {'price': 1, '_id': False})]
         self.object_count = self.db[self.market.lower()].count()
 
     def get_offline_price(self, index):
         try:
-            return super().convert_symbols(float(self.prices[index]['price']))
+            return super().convert_symbols(float(self.prices[index]))
         except:
             return None

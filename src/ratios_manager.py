@@ -11,7 +11,7 @@ class RatiosManager:
     def add_ratio(self, ratio):
         self.ratios.append(ratio)
 
-        if self.is_list_full():
+        if len(self.ratios) > self.list_length:
             del self.ratios[0]
 
     def average_ratio(self):

@@ -37,6 +37,7 @@ def initialize_ratios_list(agent, ratio_manager, offline=False):
         if offline:
             source_price = agent.get_market_price('source', index)
             destination_price = agent.get_market_price('destination', index)
+            index += 1
         else:
             source_price = agent.get_market_price('source')
             destination_price = agent.get_market_price('destination')
@@ -76,7 +77,7 @@ def trade(agent, ratio_manager):
 
 def offline_trade(agent, ratio_manager, object_count):
     profit = 0
-    index = ratio_manager.list_length
+    index = int(ratio_manager.list_length)
 
     while index < object_count:
         source_price = agent.get_market_price('source', index)
@@ -94,4 +95,4 @@ def offline_trade(agent, ratio_manager, object_count):
                 profit += source_price
         index += 1
 
-    print(profit)
+    print('profit: ' + str(profit))
