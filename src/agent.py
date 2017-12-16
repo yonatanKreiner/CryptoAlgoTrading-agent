@@ -1,4 +1,4 @@
-import requests
+from .market import Market, OfflineMarket
 
 
 class Agent:
@@ -16,30 +16,17 @@ class Agent:
             return self.destination_market.get_price()
 
 
-class Market:
+class OfflineAgent:
     def __init__(self, config):
-        self.market = config['market']
-        self.symbol = config['symbol']
-        self.api = config['api']
-        self.price_types = {
-            'last': config['last_price_key'],
-            'bid': config['bid_key'],
-            'ask': config['ask_key']
-        }
-        self.buy_fee = config['buy_fee']
-        self.sell_fee = config['sell_fee']
+        self.can_buy = True
+        self.source_market = OfflineMarket(config['source'])
+        self.destination_market = OfflineMarket(config['destination'])
+        self.object_count = min((self.source_market.object_count, self.destination_market.object_count))
 
-    def get_price(self, type):
-        try:
-            res = requests.get(self.api).json()
-            last_price = res[self.last_price_key]
-            price = res[self.price_types[type]]
-            return self.convert_symbols(float(last_price))
-        except:
-            return None
+        self.minimum_ratio_difference = config['minimum_ratio_difference']
 
-    def convert_symbols(self, price):
-        if self.symbol == 'BTCNIS':
-            return price / 3.49
+    def get_market_price(self, market, index):
+        if market == 'source':
+            return self.source_market.get_offline_price(index)
         else:
-            return price
+            return self.destination_market.get_offline_price(index)
