@@ -15,20 +15,17 @@ class Market:
         self.buy_fee = config['buy_fee']
         self.sell_fee = config['sell_fee']
 
-    def get_price(self, type):
+    def get_prices(self):
         try:
             res = requests.get(self.api).json()
-            last_price = res[self.last_price_key]
-            price = res[self.price_types[type]]
-            return self.convert_symbols(float(price))
-        except:
+            return_value = {
+                'last': res[self.price_types['last']],
+                'bid': res[self.price_types['bid']],
+                'ask': res[self.price_types['ask']]
+            }
+            return return_value
+        except Exception:
             return None
-
-    def convert_symbols(self, price):
-        if self.symbol == 'BTCNIS':
-            return price / 3.49
-        else:
-            return price
 
 
 class OfflineMarket(Market):
