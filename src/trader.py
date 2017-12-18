@@ -4,6 +4,7 @@ from .agent import Agent, OfflineAgent
 from .ratios_manager import RatiosManager
 from datetime import datetime
 
+
 config = json.load(open('src/agent_config.json'))
 sampling_time = config['sampling_time']
 ratios_time_length = config['ratios_time_length']
@@ -46,30 +47,52 @@ def initialize_ratios_list(agent, ratio_manager, offline=False):
             ratio = source_price / destination_price
             ratio_manager.add_ratio(ratio)
 
-def calc_min_ratio_diff(agent):
-    ask_price = agent.get_market_price('source', 'ask')
-    bid_price = agent.get_market_price('source', 'bid')
-    ask_bid_margin = ask - bid
+
+def calc_min_ratio_diff(source_prices, destination_prices):
+    source_ask_price = source_prices['ask']
+    source_bid_price = source_prices['bid']
+    source_last_price = source_prices['last']
+    destination_last_price = destination_prices['last']
+    source_ask_bid_margin = source_ask_price - source_bid_price
+    regular_ratio = destination_last_price / source_last_price
+    # fees are supposed to be calculated as the following:
+    # amount of money we are going to buy with * 0.005(0.5% commission)
+    # +
+    # amount of money we are going to get after sell * 0.005(0.5% commission)
+    # For now i used 65 which stands for:
+    # 20000 * 0.005 = 100
+    # 25000 * 0.005 = 125 (Assuming we gained 25$ on the deal)
+    # 225 / USDILS rate(3.51) = 64.10256...(ceiling)
+    fees = 65
+    profitable_ratio = (destination_last_price + source_ask_bid_margin + fees) / source_last_price
+    min_ratio = profitable_ratio - regular_ratio
+
+    return min_ratio
+
 
 def trade(agent, ratio_manager):
     profit = 0
     buy_time = None
 
     while True:
-        source_price = agent.get_market_price('source', 'last')
-        destination_price = agent.get_market_price('destination', 'last')
+        agent.update_fiat_rate()
+
+        source_prices = agent.get_market_prices('source')
+        destination_prices = agent.get_market_prices('destination')
+
+        minimum_ratio_difference = calc_min_ratio_diff(source_prices, destination_prices)
 
         if source_price is not None and destination_price is not None:
             ratio = source_price / destination_price
             ratio_manager.add_ratio(ratio)
 
-            if agent.can_buy and ratio_manager.average_ratio() - ratio > agent.minimum_ratio_difference:
+            if agent.can_buy and ratio_manager.average_ratio() - ratio > minimum_ratio_difference:
                 log('Buy', agent.source_market, source_price)
                 buy_time = datetime.now()
                 agent.can_buy = False
                 profit -= source_price
                 print('average: ' + str(ratio_manager.average_ratio()) + ', current: ' + str(ratio) + ', difference: ' + str(ratio_manager.average_ratio() - ratio))
-            elif not agent.can_buy and ratio_manager.average_ratio() - ratio <= agent.minimum_ratio_difference:
+            elif not agent.can_buy and ratio_manager.average_ratio() - ratio <= minimum_ratio_difference:
                 log('Sell', agent.source_market, source_price)
                 sell_time = datetime.now()
                 agent.can_buy = True
