@@ -82,21 +82,21 @@ def trade(agent, ratio_manager):
 
         minimum_ratio_difference = calc_min_ratio_diff(source_prices, destination_prices)
 
-        if source_price is not None and destination_price is not None:
-            ratio = source_price / destination_price
+        if source_prices['last'] is not None and destination_prices['last'] is not None:
+            ratio = source_prices['last'] / destination_prices['last']
             ratio_manager.add_ratio(ratio)
 
             if agent.can_buy and ratio_manager.average_ratio() - ratio > minimum_ratio_difference:
-                log('Buy', agent.source_market, source_price)
+                log('Buy', agent.source_market, source_prices['ask'])
                 buy_time = datetime.now()
                 agent.can_buy = False
-                profit -= source_price
+                profit -= source_prices['ask']
                 print('average: ' + str(ratio_manager.average_ratio()) + ', current: ' + str(ratio) + ', difference: ' + str(ratio_manager.average_ratio() - ratio))
             elif not agent.can_buy and ratio_manager.average_ratio() - ratio <= minimum_ratio_difference:
-                log('Sell', agent.source_market, source_price)
+                log('Sell', agent.source_market, source_prices['bid'])
                 sell_time = datetime.now()
                 agent.can_buy = True
-                profit += source_price
+                profit += source_prices['bid']
                 print('average: ' + str(ratio_manager.average_ratio()) + ', current: ' + str(ratio) + ', difference: ' + str(ratio_manager.average_ratio() - ratio) + ', profit:' + str(profit) + ', timestamp:(hh:mm:ss.ms) {}'.format(sell_time - buy_time))
 
             time.sleep(ratio_manager.sampling_time)
