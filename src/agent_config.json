@@ -25,5 +25,6 @@
   "fiat_rate_api": "https://api.fixer.io/latest?base=USD&symbols=ILS",
   "minimum_ratio_difference": 0.02,
   "sampling_time": 3,
-  "ratios_time_length": 1
+  "ratios_time_length": 1,
+  "offline": false
 }

@@ -1,19 +1,19 @@
-from .market import Market, OfflineMarket
+from .market import Market
 import requests
 
 
 class Agent:
-    def __init__(self, config):
+    def __init__(self, config, offline):
         self.fiat_rate_api = config['fiat_rate_api']
         self.fiat_symbol = config['fiat_symbol']
-        self.fiat_rate = 0
+        self.fiat_rate = config['fiat_start_price']
         self.can_buy = True
-        self.source_market = Market(config['source'])
-        self.destination_market = Market(config['destination'])
-
+        self.source_market = Market(config['source'], offline)
+        self.destination_market = Market(config['destination'], offline)
         self.minimum_ratio_difference = config['minimum_ratio_difference']
+        self.samples_count = min(len(self.source_market.db_data), len(self.destination_market.db_data))
 
-    def get_market_prices(self, market):
+    def get_market_price(self, market):
         if market == 'source':
             return self.convert_prices(self.source_market.get_prices(), self.fiat_rate)
         else:
@@ -26,22 +26,6 @@ class Agent:
         except Exception:
             pass
 
-    @staticmethod
-    def convert_prices(prices, rate):
+    def convert_prices(self, prices, rate):
+        self.update_fiat_rate()
         return prices.update((key, value / rate) for key, value in prices.items())
-
-
-class OfflineAgent:
-    def __init__(self, config):
-        self.can_buy = True
-        self.source_market = OfflineMarket(config['source'])
-        self.destination_market = OfflineMarket(config['destination'])
-        self.object_count = min((self.source_market.object_count, self.destination_market.object_count))
-
-        self.minimum_ratio_difference = config['minimum_ratio_difference']
-
-    def get_market_price(self, market, index):
-        if market == 'source':
-            return self.source_market.get_offline_price(index)
-        else:
-            return self.destination_market.get_offline_price(index)
