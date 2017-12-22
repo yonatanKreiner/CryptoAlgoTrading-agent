@@ -15,7 +15,7 @@ class Agent:
 
     def get_market_prices(self, market):
         if market == 'source':
-            return self.convert_prices(source_market.get_prices(), self.fiat_rate)
+            return self.convert_prices(self.source_market.get_prices(), self.fiat_rate)
         else:
             return self.destination_market.get_prices()
 
