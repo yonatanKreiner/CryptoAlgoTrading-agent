@@ -31,14 +31,19 @@ class Market:
             if self.offline:
                 res = self.db_data[self.index]
                 self.index += 1
+                prices = {
+                    'last': res['price'],
+                    'bid': res['bid'],
+                    'ask': res['ask']
+                }
             else:
                 res = requests.get(self.api).json()
+                prices = {
+                    'last': res[self.price_types['last']],
+                    'bid': res[self.price_types['bid']],
+                    'ask': res[self.price_types['ask']]
+                }
 
-            return_value = {
-                'last': res[self.price_types['last']],
-                'bid': res[self.price_types['bid']],
-                'ask': res[self.price_types['ask']]
-            }
-            return return_value
+            return prices
         except Exception:
             return None

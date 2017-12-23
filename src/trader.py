@@ -25,40 +25,41 @@ class Trader:
 
     def initialize_ratios_list(self):
         while not self.ratio_manager.is_list_full():
-            source_price = self.agent.get_market_price('source')
-            destination_price = self.agent.get_market_price('destination')
-
-            if source_price is not None and destination_price is not None:
-                ratio = source_price / destination_price
-                self.ratio_manager.add_ratio(ratio)
+            self.check_ratio(True)
 
     def trade(self):
         if self.offline:
-            for _ in self.agent.samples_count:
+            for x in range(self.agent.samples_count):
                 self.check_ratio()
         else:
             while True:
                 self.check_ratio()
                 time.sleep(self.ratio_manager.sampling_time)
 
-    def check_ratio(self):
-        source_prices = self.agent.get_market_price('source')
-        destination_prices = self.agent.get_market_price('destination')
+    def check_ratio(self, initialization=False):
+        try:
+            source_prices = self.agent.get_market_prices('source')
+            destination_prices = self.agent.get_market_prices('destination')
 
-        minimum_ratio_difference = self.calc_min_ratio_diff(source_prices, destination_prices)
+            #minimum_ratio_difference = self.calc_min_ratio_diff(source_prices, destination_prices)
 
-        if source_prices['last'] is not None and destination_prices['last'] is not None:
-            ratio = source_prices['last'] / destination_prices['last']
-            self.ratio_manager.add_ratio(ratio)
+            if source_prices['last'] is not None and destination_prices['last'] is not None:
+                ratio = source_prices['last'] / destination_prices['last']
+                self.ratio_manager.add_ratio(ratio)
 
-            if self.agent.can_buy and self.ratio_manager.average_ratio() - ratio > minimum_ratio_difference:
-                self.log('Buy', self.agent.source_market, source_prices['ask'])
-                self.agent.can_buy = False
-                self.profit -= source_prices['ask']
-            elif not self.agent.can_buy and self.ratio_manager.average_ratio() - ratio <= minimum_ratio_difference:
-                self.log('Sell', self.agent.source_market, source_prices['bid'])
-                self.agent.can_buy = True
-                self.profit += source_prices['bid']
+                if not initialization:
+                    if self.agent.can_buy and \
+                            self.ratio_manager.average_ratio() - ratio > self.agent.minimum_buy_ratio_difference:
+                        self.log('Buy', self.agent.source_market, source_prices['ask'])
+                        self.agent.can_buy = False
+                        self.profit -= source_prices['ask']
+                    elif not self.agent.can_buy and \
+                            self.ratio_manager.average_ratio() - ratio <= self.agent.minimum_sell_ratio_difference:
+                        self.log('Sell', self.agent.source_market, source_prices['bid'])
+                        self.agent.can_buy = True
+                        self.profit += source_prices['bid']
+        except:
+            pass
 
     @staticmethod
     def calc_min_ratio_diff(source_prices, destination_prices):

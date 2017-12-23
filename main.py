@@ -7,6 +7,9 @@ def main():
     trader = Trader(config)
     trader.activate()
 
+    if trader.offline:
+        print(trader.profit)
+
 
 if __name__ == '__main__':
     main()
