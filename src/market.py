@@ -23,7 +23,7 @@ class Market:
         client = MongoClient('mongodb://ariel:ariel@ds127536.mlab.com:27536/collector')
         db = client.collector
         self.db_data = [x for x in db[self.market.lower()].find({}, {'price': 1, 'bid': 1, 'ask': 1, '_id': False})]
-        self.object_count = self.db[self.market.lower()].count()
+        self.object_count = db[self.market.lower()].count()
         self.index = 0
 
     def get_prices(self):

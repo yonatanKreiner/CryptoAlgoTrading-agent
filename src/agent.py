@@ -11,7 +11,10 @@ class Agent:
         self.source_market = Market(config['source'], offline)
         self.destination_market = Market(config['destination'], offline)
         self.minimum_ratio_difference = config['minimum_ratio_difference']
-        self.samples_count = min(len(self.source_market.db_data), len(self.destination_market.db_data))
+        if offline:
+            self.samples_count = min(len(self.source_market.db_data), len(self.destination_market.db_data))
+
+
 
     def get_market_price(self, market):
         if market == 'source':
