@@ -5,10 +5,11 @@ from .ratios_manager import RatiosManager
 
 
 class Trader:
-    def __init__(self, config):
+    def __init__(self, config, starting_money):
         self.sampling_time = config['sampling_time']
         self.ratios_time_length = config['ratios_time_length']
-        self.profit = 0
+        self.money = starting_money
+        self.coins = 0
         self.offline = config['offline']
         self.agent = Agent(config, self.offline)
         self.ratio_manager = RatiosManager(self.sampling_time, self.ratios_time_length)
@@ -18,10 +19,16 @@ class Trader:
         self.trade()
 
     @staticmethod
-    def log(action, market, price):
+    def log_buy(market, coins, money, rate):
         with open('./log.txt', 'a', encoding='UTF-8') as log_file:
-            log_file.write(action + ': ' + market.market + ', ' + market.symbol + ' $' + str(price) + ' at ' +
-                           str(datetime.now()) + '\r\n')
+            log_file.write('Buy in ' + market.market + ', market ' + market.symbol + ' ' + str(coins) + ' coins for $' +
+                           str(money) + ' rate: ' + str(rate) + ' at ' + str(datetime.now()) + '\r\n')
+
+    @staticmethod
+    def log_sell(market, coins, money, rate):
+        with open('./log.txt', 'a', encoding='UTF-8') as log_file:
+            log_file.write('Sell in ' + market.market + ', market ' + market.symbol + ' ' + str(coins) + ' coins for $' +
+                           str(money) + ' rate: ' + str(rate) + ' at ' + str(datetime.now()) + '\r\n')
 
     def initialize_ratios_list(self):
         while not self.ratio_manager.is_list_full():
@@ -50,14 +57,18 @@ class Trader:
                 if not initialization:
                     if self.agent.can_buy and \
                             self.ratio_manager.average_ratio() - ratio > self.agent.minimum_buy_ratio_difference:
-                        self.log('Buy', self.agent.source_market, source_prices['ask'])
+                        money = self.money
+                        self.coins = self.money / source_prices['ask']
+                        self.money = 0
                         self.agent.can_buy = False
-                        self.profit -= source_prices['ask']
+                        self.log_buy(self.agent.source_market, self.coins, money, source_prices['ask'])
                     elif not self.agent.can_buy and \
                             self.ratio_manager.average_ratio() - ratio <= self.agent.minimum_sell_ratio_difference:
-                        self.log('Sell', self.agent.source_market, source_prices['bid'])
+                        coins = self.coins
+                        self.money = self.coins * source_prices['bid']
+                        self.coins = 0
                         self.agent.can_buy = True
-                        self.profit += source_prices['bid']
+                        self.log_sell(self.agent.source_market, coins, self.money, source_prices['bid'])
         except:
             pass
 
