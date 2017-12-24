@@ -48,10 +48,10 @@ class Trader:
             source_prices = self.agent.get_market_prices('source')
             destination_prices = self.agent.get_market_prices('destination')
 
-            #minimum_ratio_difference = self.calc_min_ratio_diff(source_prices, destination_prices)
+            minimum_ratio_difference = self.calc_min_ratio_diff(source_prices, destination_prices)
 
             if source_prices['last'] is not None and destination_prices['last'] is not None:
-                ratio = source_prices['last'] / destination_prices['last']
+                ratio = source_prices['ask'] / destination_prices['ask']
                 self.ratio_manager.add_ratio(ratio)
 
                 if not initialization:
