@@ -24,9 +24,9 @@
   "fiat_symbol": "ILS",
   "fiat_rate_api": "https://api.fixer.io/latest?base=USD&symbols=ILS",
   "fiat_start_price": 3.5,
-  "minimum_buy_ratio_difference": 0.05,
-  "minimum_sell_ratio_difference": 0.02,
+  "minimum_buy_ratio_difference": 0.025,
+  "minimum_sell_ratio_difference": 0.0025,
   "sampling_time": 3,
-  "ratios_time_length": 1,
+  "ratios_time_length": 24,
   "offline": true
 }
