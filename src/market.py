@@ -39,9 +39,9 @@ class Market:
             else:
                 res = requests.get(self.api).json()
                 prices = {
-                    'last': res[self.price_types['last']],
-                    'bid': res[self.price_types['bid']],
-                    'ask': res[self.price_types['ask']]
+                    'last': float(res[self.price_types['last']]),
+                    'bid': float(res[self.price_types['bid']]),
+                    'ask': float(res[self.price_types['ask']])
                 }
 
             return prices
