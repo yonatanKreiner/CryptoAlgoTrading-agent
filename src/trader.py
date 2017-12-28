@@ -2,6 +2,7 @@ import time
 from datetime import datetime
 from .agent import Agent
 from .ratios_manager import RatiosManager
+from pymongo import MongoClient
 
 
 class Trader:
@@ -13,6 +14,15 @@ class Trader:
         self.offline = config['offline']
         self.agent = Agent(config, self.offline)
         self.ratio_manager = RatiosManager(self.sampling_time, self.ratios_time_length)
+        self.offline_transactions = { # We are going to use it as a dictionary of documents of offline transactions
+            'minimum_buy_ratio_difference': config['minimum_buy_ratio_difference'],
+            'minimum_sell_ratio_difference': config['minimum_sell_ratio_difference'],
+            'sampling_time': config['sampling_time'],
+            'ratios_time_length': config['ratios_time_length'],
+            'transactions': []
+        }
+        self.client = MongoClient('mongodb://ariel:ariel@ds127536.mlab.com:27536/collector')
+        self.db = self.client.collector
 
     def activate(self):
         self.initialize_ratios_list()
@@ -38,6 +48,8 @@ class Trader:
         if self.offline:
             for x in range(self.agent.samples_count):
                 self.check_ratio()
+
+            self.db['offline_transactions'].insert_one(self.offline_transactions)
         else:
             while True:
                 self.check_ratio()
@@ -62,6 +74,13 @@ class Trader:
                         self.money = 0
                         self.agent.can_buy = False
                         self.log_buy(self.agent.source_market, self.coins, money, source_prices['ask'])
+                        self.offline_transactions['transactions'].append({'buy': {
+                            'price': source_prices['ask'],
+                            'bid': source_prices['bid'],
+                            'ask': source_prices['ask'],
+                            'volume': 0,
+                            'date': source_prices['date']
+                        }})
                     elif not self.agent.can_buy and \
                             self.ratio_manager.average_ratio() - ratio <= self.agent.minimum_sell_ratio_difference:
                         coins = self.coins
@@ -69,8 +88,16 @@ class Trader:
                         self.coins = 0
                         self.agent.can_buy = True
                         self.log_sell(self.agent.source_market, coins, self.money, source_prices['bid'])
-        except:
-            pass
+                        self.offline_transactions['transactions'][-1]['sell'] = {
+                            'price': source_prices['bid'],
+                            'bid': source_prices['bid'],
+                            'ask': source_prices['ask'],
+                            'volume': 0,
+                            'date': source_prices['date']
+                        }
+                        self.offline_transactions['transactions'][-1]['money'] = self.money
+        except Exception as e:
+            print(str(e))
 
     @staticmethod
     def calc_min_ratio_diff(source_prices, destination_prices):
