@@ -22,7 +22,7 @@ class Market:
     def __initialize_prices(self):
         client = MongoClient('mongodb://ariel:ariel@ds127536.mlab.com:27536/collector')
         db = client.collector
-        self.db_data = [x for x in db[self.market.lower()].find({}, {'price': 1, 'bid': 1, 'ask': 1, '_id': False})]
+        self.db_data = [x for x in db[self.market.lower()].find({}, {'price': 1, 'bid': 1, 'ask': 1, 'date': 1, '_id': False})]
         self.object_count = db[self.market.lower()].count()
         self.index = 0
 
@@ -34,7 +34,8 @@ class Market:
                 prices = {
                     'last': res['price'],
                     'bid': res['bid'],
-                    'ask': res['ask']
+                    'ask': res['ask'],
+                    'date': res['date']
                 }
             else:
                 res = requests.get(self.api).json()
