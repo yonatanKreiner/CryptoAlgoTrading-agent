@@ -63,12 +63,15 @@ class Trader:
             minimum_ratio_difference = self.calc_min_ratio_diff(source_prices, destination_prices)
 
             if source_prices['last'] is not None and destination_prices['last'] is not None:
-                ratio = source_prices['ask'] / destination_prices['ask']
+                ratio = source_prices['bid'] / destination_prices['bid']
                 self.ratio_manager.add_ratio(ratio)
 
                 if not initialization:
+                    future_price = self.ratio_manager.average_ratio() * destination_prices['bid']
+
                     if self.agent.can_buy and \
-                            self.ratio_manager.average_ratio() - ratio > self.agent.minimum_buy_ratio_difference:
+                            self.ratio_manager.average_ratio() - ratio > self.agent.minimum_buy_ratio_difference and \
+                            future_price > source_prices['ask']:
                         money = self.money
                         self.coins = self.money / source_prices['ask']
                         self.money = 0
