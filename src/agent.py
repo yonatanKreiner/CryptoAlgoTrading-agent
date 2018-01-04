@@ -34,6 +34,9 @@ class Agent:
         if not self.offline:
             self.update_fiat_rate()
 
+        if prices is None:
+            return None
+
         for key in prices:
             if key != 'date':
                 prices[key] = prices[key] / self.fiat_rate

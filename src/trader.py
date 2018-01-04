@@ -23,10 +23,16 @@ class Trader:
         }
         self.client = MongoClient('mongodb://ariel:ariel@ds127536.mlab.com:27536/collector')
         self.db = self.client.collector
+        self.log_initialize()
 
     def activate(self):
         self.initialize_ratios_list()
         self.trade()
+    
+    @staticmethod
+    def log_initialize():
+        with open('./log.txt', 'w', encoding='UTF-8') as log_file:
+            log_file.write('')
 
     @staticmethod
     def log_buy(market, coins, money, rate):
@@ -56,51 +62,48 @@ class Trader:
                 time.sleep(self.ratio_manager.sampling_time)
 
     def check_ratio(self, initialization=False):
-        try:
-            source_prices = self.agent.get_market_prices('source')
-            destination_prices = self.agent.get_market_prices('destination')
+        source_prices = self.agent.get_market_prices('source')
+        destination_prices = self.agent.get_market_prices('destination')
 
-            minimum_ratio_difference = self.calc_min_ratio_diff(source_prices, destination_prices)
+        #minimum_ratio_difference = self.calc_min_ratio_diff(source_prices, destination_prices)
 
-            if source_prices['last'] is not None and destination_prices['last'] is not None:
-                ratio = source_prices['bid'] / destination_prices['bid']
-                self.ratio_manager.add_ratio(ratio)
+        if source_prices is not None and destination_prices is not None:
+            ratio = source_prices['bid'] / destination_prices['bid']
+            self.ratio_manager.add_ratio(ratio)
 
-                if not initialization:
-                    future_price = self.ratio_manager.average_ratio() * destination_prices['bid']
-
-                    if self.agent.can_buy and \
-                            self.ratio_manager.average_ratio() - ratio > self.agent.minimum_buy_ratio_difference and \
-                            future_price > source_prices['ask']:
-                        money = self.money
-                        self.coins = self.money / source_prices['ask']
-                        self.money = 0
-                        self.agent.can_buy = False
-                        self.log_buy(self.agent.source_market, self.coins, money, source_prices['ask'])
-                        self.offline_transactions['transactions'].append({'buy': {
-                            'price': source_prices['ask'],
-                            'bid': source_prices['bid'],
-                            'ask': source_prices['ask'],
-                            'volume': 0,
-                            'date': source_prices['date']
-                        }})
-                    elif not self.agent.can_buy and \
-                            self.ratio_manager.average_ratio() - ratio <= self.agent.minimum_sell_ratio_difference:
-                        coins = self.coins
-                        self.money = self.coins * source_prices['bid']
-                        self.coins = 0
-                        self.agent.can_buy = True
-                        self.log_sell(self.agent.source_market, coins, self.money, source_prices['bid'])
-                        self.offline_transactions['transactions'][-1]['sell'] = {
-                            'price': source_prices['bid'],
-                            'bid': source_prices['bid'],
-                            'ask': source_prices['ask'],
-                            'volume': 0,
-                            'date': source_prices['date']
-                        }
-                        self.offline_transactions['transactions'][-1]['money'] = self.money
-        except Exception as e:
-            print(str(e))
+            if not initialization:
+                future_price = self.ratio_manager.average_ratio() * destination_prices['bid']
+                # self.ratio_manager.average_ratio() - ratio > self.agent.minimum_buy_ratio_difference and \
+                
+                if self.agent.can_buy and \
+                        future_price - source_prices['ask'] > 100:
+                    money = self.money
+                    self.coins = self.money / source_prices['ask']
+                    self.money = 0
+                    self.agent.can_buy = False
+                    self.log_buy(self.agent.source_market, self.coins, money, source_prices['ask'])
+                    self.offline_transactions['transactions'].append({'buy': {
+                        'price': source_prices['ask'],
+                        'bid': source_prices['bid'],
+                        'ask': source_prices['ask'],
+                        'volume': 0,
+                        'date': source_prices['date']
+                    }})
+                elif not self.agent.can_buy and \
+                        self.ratio_manager.average_ratio() - ratio <= self.agent.minimum_sell_ratio_difference:
+                    coins = self.coins
+                    self.money = self.coins * source_prices['bid']
+                    self.coins = 0
+                    self.agent.can_buy = True
+                    self.log_sell(self.agent.source_market, coins, self.money, source_prices['bid'])
+                    self.offline_transactions['transactions'][-1]['sell'] = {
+                        'price': source_prices['bid'],
+                        'bid': source_prices['bid'],
+                        'ask': source_prices['ask'],
+                        'volume': 0,
+                        'date': source_prices['date']
+                    }
+                    self.offline_transactions['transactions'][-1]['money'] = self.money
 
     @staticmethod
     def calc_min_ratio_diff(source_prices, destination_prices):
