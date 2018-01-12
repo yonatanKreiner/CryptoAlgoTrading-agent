@@ -14,7 +14,7 @@ class Trader:
         self.offline = config['offline']
         self.agent = Agent(config, self.offline)
         self.ratio_manager = RatiosManager(self.sampling_time, self.ratios_time_length)
-        self.offline_transactions = { # We are going to use it as a dictionary of documents of offline transactions
+        self.offline_transactions = {  # We are going to use it as a dictionary of documents of offline transactions
             'minimum_buy_ratio_difference': config['minimum_buy_ratio_difference'],
             'minimum_sell_ratio_difference': config['minimum_sell_ratio_difference'],
             'sampling_time': config['sampling_time'],
@@ -28,7 +28,7 @@ class Trader:
     def activate(self):
         self.initialize_ratios_list()
         self.trade()
-    
+
     @staticmethod
     def log_initialize():
         with open('./log.txt', 'w', encoding='UTF-8') as log_file:
@@ -43,8 +43,9 @@ class Trader:
     @staticmethod
     def log_sell(market, coins, money, rate):
         with open('./log.txt', 'a', encoding='UTF-8') as log_file:
-            log_file.write('Sell in ' + market.market + ', market ' + market.symbol + ' ' + str(coins) + ' coins for $' +
-                           str(money) + ' rate: ' + str(rate) + ' at ' + str(datetime.now()) + '\r\n')
+            log_file.write(
+                'Sell in ' + market.market + ', market ' + market.symbol + ' ' + str(coins) + ' coins for $' +
+                str(money) + ' rate: ' + str(rate) + ' at ' + str(datetime.now()) + '\r\n')
 
     def initialize_ratios_list(self):
         while not self.ratio_manager.is_list_full():
@@ -65,7 +66,7 @@ class Trader:
         source_prices = self.agent.get_market_prices('source')
         destination_prices = self.agent.get_market_prices('destination')
 
-        #minimum_ratio_difference = self.calc_min_ratio_diff(source_prices, destination_prices)
+        # minimum_ratio_difference = self.calc_min_ratio_diff(source_prices, destination_prices)
 
         if source_prices is not None and destination_prices is not None:
             ratio = source_prices['bid'] / destination_prices['bid']
@@ -73,12 +74,12 @@ class Trader:
 
             if not initialization:
                 future_price = self.ratio_manager.average_ratio() * destination_prices['bid']
-                # self.ratio_manager.average_ratio() - ratio > self.agent.minimum_buy_ratio_difference and \
-                
+
                 if self.agent.can_buy and \
+                        self.ratio_manager.average_ratio() - ratio > self.agent.minimum_buy_ratio_difference and \
                         future_price - source_prices['ask'] > 100:
                     money = self.money
-                    self.coins = self.money / source_prices['ask']
+                    self.coins = self.money / source_prices['bid']
                     self.money = 0
                     self.agent.can_buy = False
                     self.log_buy(self.agent.source_market, self.coins, money, source_prices['ask'])
@@ -87,7 +88,8 @@ class Trader:
                         'bid': source_prices['bid'],
                         'ask': source_prices['ask'],
                         'volume': 0,
-                        'date': source_prices['date']
+                        'date': source_prices['date'],
+                        'ratio': self.ratio_manager.average_ratio()
                     }})
                 elif not self.agent.can_buy and \
                         self.ratio_manager.average_ratio() - ratio <= self.agent.minimum_sell_ratio_difference:
@@ -101,7 +103,8 @@ class Trader:
                         'bid': source_prices['bid'],
                         'ask': source_prices['ask'],
                         'volume': 0,
-                        'date': source_prices['date']
+                        'date': source_prices['date'],
+                        'ratio': self.ratio_manager.average_ratio()
                     }
                     self.offline_transactions['transactions'][-1]['money'] = self.money
 
