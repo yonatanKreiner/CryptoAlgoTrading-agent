@@ -1,4 +1,5 @@
 import time
+import random
 from datetime import datetime
 from .agent import Agent
 from .ratios_manager import RatiosManager
@@ -24,6 +25,8 @@ class Trader:
         self.client = MongoClient('mongodb://ariel:ariel@ds127536.mlab.com:27536/collector')
         self.db = self.client.collector
         self.log_initialize()
+        self.bid_buy_chance_precentage = 30
+        self.did_bid = False
 
     def activate(self):
         self.initialize_ratios_list()
@@ -46,6 +49,9 @@ class Trader:
             log_file.write(
                 'Sell in ' + market.market + ', market ' + market.symbol + ' ' + str(coins) + ' coins for $' +
                 str(money) + ' rate: ' + str(rate) + ' at ' + str(datetime.now()) + '\r\n')
+
+    def did_buy_from_bid(self):
+        return random.randint(0, 100) < self.bid_buy_chance_precentage
 
     def initialize_ratios_list(self):
         while not self.ratio_manager.is_list_full():
@@ -77,20 +83,27 @@ class Trader:
 
                 if self.agent.can_buy and \
                         self.ratio_manager.average_ratio() - ratio > self.agent.minimum_buy_ratio_difference and \
-                        future_price - source_prices['ask'] > 100:
-                    money = self.money
-                    self.coins = self.money / source_prices['bid']
-                    self.money = 0
-                    self.agent.can_buy = False
-                    self.log_buy(self.agent.source_market, self.coins, money, source_prices['ask'])
-                    self.offline_transactions['transactions'].append({'buy': {
-                        'price': source_prices['ask'],
-                        'bid': source_prices['bid'],
-                        'ask': source_prices['ask'],
-                        'volume': 0,
-                        'date': source_prices['date'],
-                        'ratio': self.ratio_manager.average_ratio()
-                    }})
+                        future_price - source_prices['bid'] > 100:
+
+                    if not self.did_bid:
+                        self.bid()
+                    else:
+                        self.update_bid()
+                    
+                    if self.did_buy_from_bid():
+                        money = self.money
+                        self.coins = self.money / source_prices['bid']
+                        self.money = 0
+                        self.agent.can_buy = False
+                        self.log_buy(self.agent.source_market, self.coins, money, source_prices['ask'])
+                        self.offline_transactions['transactions'].append({'buy': {
+                            'price': source_prices['ask'],
+                            'bid': source_prices['bid'],
+                            'ask': source_prices['ask'],
+                            'volume': 0,
+                            'date': source_prices['date'],
+                            'ratio': self.ratio_manager.average_ratio()
+                        }})
                 elif not self.agent.can_buy and \
                         self.ratio_manager.average_ratio() - ratio <= self.agent.minimum_sell_ratio_difference:
                     coins = self.coins
@@ -107,6 +120,17 @@ class Trader:
                         'ratio': self.ratio_manager.average_ratio()
                     }
                     self.offline_transactions['transactions'][-1]['money'] = self.money
+                else:
+                    self.remove_bid()
+    
+    def bid(self):
+        self.did_bid = True
+    
+    def update_bid(self):
+        pass
+    
+    def remove_bid(self):
+        self.did_bid = False
 
     @staticmethod
     def calc_min_ratio_diff(source_prices, destination_prices):
