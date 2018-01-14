@@ -12,6 +12,8 @@ class Trader:
         self.ratios_time_length = config['ratios_time_length']
         self.money = starting_money
         self.coins = 0
+        self.buy_price = 0
+        self.stop_loss_precentage = config['stop_loss_precentage']
         self.offline = config['offline']
         self.agent = Agent(config, self.offline)
         self.ratio_manager = RatiosManager(self.sampling_time, self.ratios_time_length)
@@ -95,6 +97,7 @@ class Trader:
                         self.coins = self.money / source_prices['bid']
                         self.money = 0
                         self.agent.can_buy = False
+                        self.buy_price = source_prices['bid']
                         self.log_buy(self.agent.source_market, self.coins, money, source_prices['ask'])
                         self.offline_transactions['transactions'].append({'buy': {
                             'price': source_prices['ask'],
@@ -105,7 +108,8 @@ class Trader:
                             'ratio': self.ratio_manager.average_ratio()
                         }})
                 elif not self.agent.can_buy and \
-                        self.ratio_manager.average_ratio() - ratio <= self.agent.minimum_sell_ratio_difference:
+                        (self.ratio_manager.average_ratio() - ratio <= self.agent.minimum_sell_ratio_difference or \
+                        self.stop_loss(source_prices['bid'])):
                     coins = self.coins
                     self.money = self.coins * source_prices['bid']
                     self.coins = 0
@@ -131,6 +135,13 @@ class Trader:
     
     def remove_bid(self):
         self.did_bid = False
+        
+    def stop_loss(self, current_bid):
+        change_percentage = ((float(current_bid) - self.buy_price) / self.buy_price) * 100
+        if change_percentage > self.stop_loss_precentage:
+            return True
+        else:
+            return False
 
     @staticmethod
     def calc_min_ratio_diff(source_prices, destination_prices):
