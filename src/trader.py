@@ -100,7 +100,7 @@ class Trader:
                         self.buy_price = source_prices['bid']
                         self.log_buy(self.agent.source_market, self.coins, money, source_prices['ask'])
                         self.offline_transactions['transactions'].append({'buy': {
-                            'price': source_prices['ask'],
+                            'price': source_prices['bid'],
                             'bid': source_prices['bid'],
                             'ask': source_prices['ask'],
                             'volume': 0,
