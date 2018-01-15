@@ -24,8 +24,8 @@ class Trader:
             'ratios_time_length': config['ratios_time_length'],
             'transactions': []
         }
-        self.client = MongoClient('mongodb://ariel:ariel@ds127536.mlab.com:27536/collector')
-        self.db = self.client.collector
+        client = MongoClient('mongodb://bitteamisrael:Ariel241096@ds135667-a0.mlab.com:35667,ds135667-a1.mlab.com:35667/bitteamdb?replicaSet=rs-ds135667')
+        self.db = client.bitteamdb
         self.log_initialize()
         self.bid_buy_chance_precentage = 30
         self.did_bid = False
