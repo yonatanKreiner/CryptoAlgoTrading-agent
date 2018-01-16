@@ -20,9 +20,9 @@ class Market:
             self.__initialize_prices()
 
     def __initialize_prices(self):
-        client = MongoClient('mongodb://ariel:ariel@ds127536.mlab.com:27536/collector')
-        db = client.collector
-        self.db_data = [x for x in db[self.market.lower()].find({}, {'price': 1, 'bid': 1, 'ask': 1, 'date': 1, '_id': False})]
+        client = MongoClient('mongodb://bitteamisrael:Ariel241096@ds135667-a0.mlab.com:35667,ds135667-a1.mlab.com:35667/bitteamdb?replicaSet=rs-ds135667')
+        db = client.bitteamdb
+        self.db_data = [x for x in db[self.market.lower()].find({}, {'price': 1, 'bid': 1, 'ask': 1, 'date': 1, '_id': False}).sort("date")]
         self.object_count = db[self.market.lower()].count()
         self.index = 0
 
