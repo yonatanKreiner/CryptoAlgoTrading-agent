@@ -48,3 +48,13 @@ class Market:
             return prices
         except Exception:
             return None
+    
+    def create_bid(self, amount, price):
+        res = requests.post('https://bit2c.co.il/Order/AddOrder', data={'Amount': amount, 'Price': price, 'IsBid': True, 'Pair': 'BtcNis'}).json()
+        if res['OrderResponse']['HasError'] == False:
+            return res['NewOrder']['id']
+       else:
+        return 0
+        
+    def cancel_bid(self, order_id):
+        res = requests.post('https://bit2c.co.il/Order/CancelOrder', data={'id': order_id})

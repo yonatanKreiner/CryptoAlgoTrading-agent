@@ -13,6 +13,7 @@ class Trader:
         self.money = starting_money
         self.coins = 0
         self.buy_price = 0
+        self.order_id = 0
         self.stop_loss_precentage = config['stop_loss_precentage']
         self.offline = config['offline']
         self.agent = Agent(config, self.offline)
@@ -88,16 +89,20 @@ class Trader:
                         future_price - source_prices['bid'] > 100:
 
                     if not self.did_bid:
-                        self.bid()
+                        self.bid_price = source_prices['bid'] + 1
+                        self.bid(self.money / source_prices['bid'] + 1, source_prices['bid'] + 1)
                     else:
-                        self.update_bid()
+                        if source_prices['bid'] > self.bid_price:
+                            self.remove_bid()
+                            self.bid_price = source_prices['bid'] + 1
+                            self.bid(self.money / source_prices['bid'] + 1, source_prices['bid'] + 1)
                     
                     if self.did_buy_from_bid():
                         money = self.money
                         self.coins = self.money / source_prices['bid']
                         self.money = 0
                         self.agent.can_buy = False
-                        self.buy_price = source_prices['bid']
+                        self.buy_price = source_prices['bid']ז
                         self.log_buy(self.agent.source_market, self.coins, money, source_prices['ask'])
                         self.offline_transactions['transactions'].append({'buy': {
                             'price': source_prices['ask'],
@@ -127,14 +132,17 @@ class Trader:
                 else:
                     self.remove_bid()
     
-    def bid(self):
-        self.did_bid = True
-    
-    def update_bid(self):
-        pass
+    def bid(self, amount, price):
+        order_id = self.agent.source_market.create_bid(amount, price)
+        if order_id != 0:
+            self.did_bid = True
+            self.order_id = order_id
+            
+        return order_id
     
     def remove_bid(self):
         self.did_bid = False
+        self.agent.source_market.cancel_bid(self.order_id)
         
     def stop_loss(self, current_bid):
         change_percentage = ((float(current_bid) - self.buy_price) / self.buy_price) * 100
