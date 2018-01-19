@@ -1,5 +1,5 @@
 import json
-from src.trader import Trader
+from agent.src.trader import Trader
 
 
 def main(starting_money):

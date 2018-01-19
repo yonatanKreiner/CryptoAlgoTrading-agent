@@ -13,6 +13,7 @@ class Agent:
         self.minimum_buy_ratio_difference = config['minimum_buy_ratio_difference']
         self.minimum_sell_ratio_difference = config['minimum_sell_ratio_difference']
         self.offline = offline
+        self.update_fiat_rate()
 
         if offline:
             self.samples_count = min(len(self.source_market.db_data), len(self.destination_market.db_data))

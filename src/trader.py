@@ -1,9 +1,13 @@
 import time
 import random
 from datetime import datetime
+
+import pymongo
+
 from .agent import Agent
 from .ratios_manager import RatiosManager
 from pymongo import MongoClient
+from .bit2c import Bit2cClient
 
 
 class Trader:
@@ -14,22 +18,28 @@ class Trader:
         self.coins = 0
         self.buy_price = 0
         self.order_id = 0
-        self.stop_loss_precentage = config['stop_loss_precentage']
+        self.stop_loss_percentage = config['stop_loss_percentage']
         self.offline = config['offline']
         self.agent = Agent(config, self.offline)
         self.ratio_manager = RatiosManager(self.sampling_time, self.ratios_time_length)
-        self.offline_transactions = {  # We are going to use it as a dictionary of documents of offline transactions
-            'minimum_buy_ratio_difference': config['minimum_buy_ratio_difference'],
-            'minimum_sell_ratio_difference': config['minimum_sell_ratio_difference'],
-            'sampling_time': config['sampling_time'],
-            'ratios_time_length': config['ratios_time_length'],
-            'transactions': []
-        }
         client = MongoClient('mongodb://bitteamisrael:Ariel241096@ds135667-a0.mlab.com:35667,ds135667-a1.mlab.com:35667/bitteamdb?replicaSet=rs-ds135667')
         self.db = client.bitteamdb
         self.log_initialize()
         self.bid_buy_chance_precentage = 30
         self.did_bid = False
+        self.bid_price = 0
+        self.bit2Client = Bit2cClient('https://bit2c.co.il',
+                        '340f106f-4e61-4a58-b4f0-9112b5f75b9b',
+                        'A88B7FB7FAC26C8B89A46277FB0E505E21758C43A4E5F02CA6AAC3BC7C5A6B2B')
+
+        if self.offline:
+            self.offline_transactions = {  # We are going to use it as a dictionary of documents of offline transactions
+                'minimum_buy_ratio_difference': config['minimum_buy_ratio_difference'],
+                'minimum_sell_ratio_difference': config['minimum_sell_ratio_difference'],
+                'sampling_time': config['sampling_time'],
+                'ratios_time_length': config['ratios_time_length'],
+                'transactions': []
+            }
 
     def activate(self):
         self.initialize_ratios_list()
@@ -40,23 +50,50 @@ class Trader:
         with open('./log.txt', 'w', encoding='UTF-8') as log_file:
             log_file.write('')
 
-    @staticmethod
-    def log_buy(market, coins, money, rate):
+    def log_buy(self, market, coins, money, rate):
+        current_time = datetime.now()
+
+        if not self.offline:
+            log = {'method': 'buy', 'market': market.market, 'symbol': market.symbol,
+                   'amount:': coins, 'rate': rate, 'money': money, 'timestamp': current_time}
+            self.db_safe_insert('online_transactions', log)
+
         with open('./log.txt', 'a', encoding='UTF-8') as log_file:
             log_file.write('Buy in ' + market.market + ', market ' + market.symbol + ' ' + str(coins) + ' coins for $' +
-                           str(money) + ' rate: ' + str(rate) + ' at ' + str(datetime.now()) + '\r\n')
+                           str(money) + ' rate: ' + str(rate) + ' at ' + str(current_time) + '\r\n')
 
-    @staticmethod
-    def log_sell(market, coins, money, rate):
+    def log_sell(self, market, coins, money, rate):
+        current_time = datetime.now()
+
+        if not self.offline:
+            log = {'method': 'sell', 'market': market.market, 'symbol': market.symbol,
+                   'amount:': coins, 'rate': rate, 'money': money, 'timestamp': current_time}
+            self.db_safe_insert('online_transactions', log)
+
         with open('./log.txt', 'a', encoding='UTF-8') as log_file:
             log_file.write(
                 'Sell in ' + market.market + ', market ' + market.symbol + ' ' + str(coins) + ' coins for $' +
-                str(money) + ' rate: ' + str(rate) + ' at ' + str(datetime.now()) + '\r\n')
+                str(money) + ' rate: ' + str(rate) + ' at ' + str(current_time) + '\r\n')
 
-    def did_buy_from_bid(self):
-        return random.randint(0, 100) < self.bid_buy_chance_precentage
+    @staticmethod
+    def log_error(error):
+        with open('./log.txt', 'a', encoding='UTF-8') as log_file:
+            log_file.write(
+                'Error: ' + error + ' At ' + str(datetime.now()) + '\r\n')
 
     def initialize_ratios_list(self):
+        bit2c_docs = [x['bid'] / self.agent.fiat_rate for x in self.db['bit2c_newest'].find({}, {'bid': 1, '_id': False})
+            .sort([('date', pymongo.DESCENDING)]).limit(self.ratio_manager.list_length)]
+        bitfinex_docs = [x['bid'] for x in self.db['bitfinex_newest'].find({}, {'bid': 1, '_id': False})
+            .sort([('date', pymongo.DESCENDING)]).limit(self.ratio_manager.list_length)]
+
+        ratios = []
+
+        for i in range(len(bit2c_docs)):
+            ratios.append(bit2c_docs[i] / bitfinex_docs[i])
+
+        self.ratio_manager.ratios = ratios
+
         while not self.ratio_manager.is_list_full():
             self.check_ratio(True)
 
@@ -88,68 +125,99 @@ class Trader:
                         self.ratio_manager.average_ratio() - ratio > self.agent.minimum_buy_ratio_difference and \
                         future_price - source_prices['bid'] > 100:
 
+                    self.bid_price = source_prices['bid'] + 1
+
                     if not self.did_bid:
-                        self.bid_price = source_prices['bid'] + 1
-                        self.bid(self.money / source_prices['bid'] + 1, source_prices['bid'] + 1)
-                    else:
-                        if source_prices['bid'] > self.bid_price:
+                        self.bid(self.money / self.bid_price, self.bid_price)
+                    elif source_prices['bid'] > self.bid_price:
                             self.remove_bid()
-                            self.bid_price = source_prices['bid'] + 1
-                            self.bid(self.money / source_prices['bid'] + 1, source_prices['bid'] + 1)
+                            self.bid(self.money / self.bid_price, self.bid_price)
                     
-                    if self.did_buy_from_bid():
+                    if self.did_bid and self.did_buy_from_bid():
                         money = self.money
                         self.coins = self.money / source_prices['bid']
                         self.money = 0
                         self.agent.can_buy = False
-                        self.buy_price = source_prices['bid']ז
+                        self.buy_price = self.bid_price
                         self.log_buy(self.agent.source_market, self.coins, money, source_prices['ask'])
-                        self.offline_transactions['transactions'].append({'buy': {
+
+                        if self.offline:
+                            self.offline_transactions['transactions'].append({'buy': {
+                                'price': source_prices['bid'],
+                                'bid': source_prices['bid'],
+                                'ask': source_prices['ask'],
+                                'volume': 0,
+                                'date': source_prices['date'],
+                                'ratio': self.ratio_manager.average_ratio()
+                            }})
+                elif not self.agent.can_buy and \
+                        (self.ratio_manager.average_ratio() - ratio <= self.agent.minimum_sell_ratio_difference or \
+                         self.stop_loss(source_prices['bid'])):
+                    coins = self.coins
+                    self.money = self.coins * self.buy_price
+                    self.coins = 0
+                    self.agent.can_buy = True
+                    self.log_sell(self.agent.source_market, coins, self.money, source_prices['bid'])
+
+                    if self.offline:
+                        self.offline_transactions['transactions'][-1]['sell'] = {
                             'price': source_prices['bid'],
                             'bid': source_prices['bid'],
                             'ask': source_prices['ask'],
                             'volume': 0,
                             'date': source_prices['date'],
                             'ratio': self.ratio_manager.average_ratio()
-                        }})
-                elif not self.agent.can_buy and \
-                        (self.ratio_manager.average_ratio() - ratio <= self.agent.minimum_sell_ratio_difference or \
-                        self.stop_loss(source_prices['bid'])):
-                    coins = self.coins
-                    self.money = self.coins * source_prices['bid']
-                    self.coins = 0
-                    self.agent.can_buy = True
-                    self.log_sell(self.agent.source_market, coins, self.money, source_prices['bid'])
-                    self.offline_transactions['transactions'][-1]['sell'] = {
-                        'price': source_prices['bid'],
-                        'bid': source_prices['bid'],
-                        'ask': source_prices['ask'],
-                        'volume': 0,
-                        'date': source_prices['date'],
-                        'ratio': self.ratio_manager.average_ratio()
-                    }
-                    self.offline_transactions['transactions'][-1]['money'] = self.money
+                        }
+                        self.offline_transactions['transactions'][-1]['money'] = self.money
                 else:
                     self.remove_bid()
     
     def bid(self, amount, price):
-        order_id = self.agent.source_market.create_bid(amount, price)
-        if order_id != 0:
+        if self.offline:
             self.did_bid = True
-            self.order_id = order_id
-            
-        return order_id
+        else:
+            res = self.bit2Client.add_order({'Amount': amount, 'Price': price, 'IsBid': True})
+
+            if res['OrderResponse']['HasError']:
+                self.log_error(res['OrderResponse']['Error'])
+            else:
+                self.order_id = res['NewOrder']['id']
+                self.did_bid = True
     
     def remove_bid(self):
-        self.did_bid = False
-        self.agent.source_market.cancel_bid(self.order_id)
-        
+        if self.offline:
+            self.did_bid = False
+        else:
+            res = self.bit2Client.cancel_order(self.order_id)
+
+            if res['OrderResponse']['HasError']:
+                self.log_error(res['OrderResponse']['Error'])
+            else:
+                self.did_bid = False
+
+    def did_buy_from_bid(self):
+        if self.offline:
+            return random.randint(0, 100) < self.bid_buy_chance_precentage
+        else:
+            res = self.bit2Client.get_order(self.order_id)
+            return res['status'] != 'Open'
+
     def stop_loss(self, current_bid):
         change_percentage = ((float(current_bid) - self.buy_price) / self.buy_price) * 100
-        if change_percentage > self.stop_loss_precentage:
+        if change_percentage > self.stop_loss_percentage:
             return True
         else:
             return False
+
+    def db_safe_insert(self, collection, document):
+        for i in range(5):
+            try:
+                self.db[collection].insert_one(document)
+                break
+            except pymongo.errors.AutoReconnect:
+                self.log_error(str(datetime.datetime.utcnow()) + ' AutoReconnect')
+
+                time.sleep(pow(2, i))
 
     @staticmethod
     def calc_min_ratio_diff(source_prices, destination_prices):

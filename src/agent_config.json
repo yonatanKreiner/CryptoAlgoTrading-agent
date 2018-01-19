@@ -28,6 +28,6 @@
   "minimum_sell_ratio_difference": 0.0025,
   "sampling_time": 3,
   "ratios_time_length": 24,
-  "stop_loss_precentage": 5,
+  "stop_loss_percentage": 5,
   "offline": true
 }

@@ -6,7 +6,7 @@ class RatiosManager:
 
         sampling_time_minutes = self.sampling_time / 60
         ratios_minutes = self.ratios_time_length * 60
-        self.list_length = ratios_minutes / sampling_time_minutes
+        self.list_length = int(ratios_minutes / sampling_time_minutes)
 
     def add_ratio(self, ratio):
         self.ratios.append(ratio)
