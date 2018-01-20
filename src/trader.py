@@ -82,17 +82,18 @@ class Trader:
                 'Error: ' + error + ' At ' + str(datetime.now()) + '\r\n')
 
     def initialize_ratios_list(self):
-        bit2c_docs = [x['bid'] / self.agent.fiat_rate for x in self.db['bit2c_newest'].find({}, {'bid': 1, '_id': False})
-            .sort([('date', pymongo.DESCENDING)]).limit(self.ratio_manager.list_length)]
-        bitfinex_docs = [x['bid'] for x in self.db['bitfinex_newest'].find({}, {'bid': 1, '_id': False})
-            .sort([('date', pymongo.DESCENDING)]).limit(self.ratio_manager.list_length)]
+        if not self.offline:
+            bit2c_docs = [x['bid'] / self.agent.fiat_rate for x in self.db['bit2c_newest'].find({}, {'bid': 1, '_id': False})
+                .sort([('date', pymongo.DESCENDING)]).limit(self.ratio_manager.list_length)]
+            bitfinex_docs = [x['bid'] for x in self.db['bitfinex_newest'].find({}, {'bid': 1, '_id': False})
+                .sort([('date', pymongo.DESCENDING)]).limit(self.ratio_manager.list_length)]
 
-        ratios = []
+            ratios = []
 
-        for i in range(len(bit2c_docs)):
-            ratios.append(bit2c_docs[i] / bitfinex_docs[i])
+            for i in range(len(bit2c_docs)):
+                ratios.append(bit2c_docs[i] / bitfinex_docs[i])
 
-        self.ratio_manager.ratios = ratios
+            self.ratio_manager.ratios = ratios
 
         while not self.ratio_manager.is_list_full():
             self.check_ratio(True)

@@ -1,5 +1,5 @@
 import json
-from agent.src.trader import Trader
+from src.trader import Trader
 
 
 def main(starting_money):
@@ -13,4 +13,4 @@ def main(starting_money):
 
 
 if __name__ == '__main__':
-    main(2000)
+    main(20)
