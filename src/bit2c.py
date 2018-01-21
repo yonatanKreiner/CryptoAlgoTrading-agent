@@ -4,14 +4,18 @@ import hmac
 import time
 import requests
 
+from src.currency_converter import CurrencyConverter
+
 
 class Bit2cClient:
     def __init__(self, base_url, key, secret):
         self.key = key
         self.secret = secret
         self.base_url = base_url
+        self.currency_converter = CurrencyConverter()
 
-    def add_nonce_to_params(self, params, nonce):
+    @staticmethod
+    def add_nonce_to_params(params, nonce):
         if params == '':
             return 'nonce=' + nonce
         else:
@@ -42,13 +46,13 @@ class Bit2cClient:
 
     def add_order(self, params):
         data = 'Amount=' + str(params["Amount"]) + \
-               '&Price=' + str(params["Price"]) + \
+               '&Price=' + str(params["Price"] * self.currency_converter.get_rate()) + \
                '&IsBid=' + str(params["IsBid"]) + '&Pair=BtcNis'
 
         return self.query('POST', '/Order/AddOrder', data)
 
-    def get_order(self, id):
-        return self.query('GET', '/Order/GetById', "id=" + str(id))
+    def get_order(self, order_id):
+        return self.query('GET', '/Order/GetById', "id=" + str(order_id))
 
-    def cancel_order(self, id):
-        return self.query('POST', '/Order/CancelOrder', "id=" + str(id))
+    def cancel_order(self, order_id):
+        return self.query('POST', '/Order/CancelOrder', "id=" + str(order_id))
