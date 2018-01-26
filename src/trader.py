@@ -3,10 +3,10 @@ import random
 from datetime import datetime
 
 import pymongo
+from pymongo import errors
 
 from .agent import Agent
 from .ratios_manager import RatiosManager
-from pymongo import MongoClient
 from .bit2c import Bit2cClient
 from .pbClient import PushbulletClient
 
@@ -23,7 +23,7 @@ class Trader:
         self.offline = config['offline']
         self.agent = Agent(config, self.offline)
         self.ratio_manager = RatiosManager(self.sampling_time, self.ratios_time_length)
-        client = MongoClient(
+        client = pymongo.MongoClient(
             'mongodb://bitteamisrael:Ariel241096@ds135667-a0.mlab.com:35667,ds135667-a1.mlab.com:35667/bitteamdb?replicaSet=rs-ds135667')
         self.db = client.bitteamdb
         self.log_initialize()
@@ -130,9 +130,8 @@ class Trader:
                 future_price = self.ratio_manager.average_ratio() * destination_prices['bid']
 
                 if self.agent.can_buy and \
-                    self.ratio_manager.average_ratio() - ratio > self.agent.minimum_buy_ratio_difference and \
+                        self.ratio_manager.average_ratio() - ratio > self.agent.minimum_buy_ratio_difference and \
                         future_price - source_prices['bid'] > 100:
-
                     if not self.did_bid:
                         self.bid_price = source_prices['bid'] + 1
                         self.bid(self.money / self.bid_price, self.bid_price)
@@ -159,23 +158,24 @@ class Trader:
                             }})
                 elif not self.agent.can_buy and \
                         (self.ratio_manager.average_ratio() - ratio <= self.agent.minimum_sell_ratio_difference or
-                             self.stop_loss(source_prices['bid'])):
-                    coins = self.coins
-                    self.money = self.coins * source_prices['bid']
-                    self.coins = 0
-                    self.agent.can_buy = True
-                    self.log_sell(self.agent.source_market, coins, self.money, source_prices['bid'])
+                         self.stop_loss(source_prices['bid'])):
+                    if self.sell(self.coins):
+                        coins = self.coins
+                        self.money = self.coins * source_prices['bid']
+                        self.coins = 0
+                        self.agent.can_buy = True
+                        self.log_sell(self.agent.source_market, coins, self.money, source_prices['bid'])
 
-                    if self.offline:
-                        self.offline_transactions['transactions'][-1]['sell'] = {
-                            'price': source_prices['bid'],
-                            'bid': source_prices['bid'],
-                            'ask': source_prices['ask'],
-                            'volume': 0,
-                            'date': source_prices['date'],
-                            'ratio': self.ratio_manager.average_ratio()
-                        }
-                        self.offline_transactions['transactions'][-1]['money'] = self.money
+                        if self.offline:
+                            self.offline_transactions['transactions'][-1]['sell'] = {
+                                'price': source_prices['bid'],
+                                'bid': source_prices['bid'],
+                                'ask': source_prices['ask'],
+                                'volume': 0,
+                                'date': source_prices['date'],
+                                'ratio': self.ratio_manager.average_ratio()
+                            }
+                            self.offline_transactions['transactions'][-1]['money'] = self.money
                 elif self.did_bid:
                     self.remove_bid()
 
@@ -190,6 +190,16 @@ class Trader:
             else:
                 self.order_id = res['NewOrder']['id']
                 self.did_bid = True
+
+    def sell(self, amount):
+        if not self.offline:
+            res = self.bit2Client.sell_order(amount)
+
+            if res['OrderResponse']['HasError']:
+                self.log_error(res['OrderResponse']['Error'])
+                return False
+            else:
+                return True
 
     def remove_bid(self):
         if self.offline:
@@ -207,6 +217,16 @@ class Trader:
             return random.randint(0, 100) < self.bid_buy_chance_precentage
         else:
             res = self.bit2Client.get_order(self.order_id)
+
+            if 'Error' in res:
+                print(res['Error'])
+
+                if res['Error'] == 'No order found.':
+                    return True
+
+            if 'status' not in res:
+                print(res)
+
             return res['status'] != 'Open'
 
     def stop_loss(self, current_bid):
@@ -222,7 +242,7 @@ class Trader:
                 self.db[collection].insert_one(document)
                 break
             except pymongo.errors.AutoReconnect:
-                self.log_error(str(datetime.datetime.utcnow()) + ' AutoReconnect')
+                self.log_error(str(datetime.utcnow()) + ' AutoReconnect')
 
                 time.sleep(pow(2, i))
 

@@ -9,4 +9,5 @@ class PushbulletClient:
         self.__emails = ['yonatankreiner@gmail.com', 'ariel042cohen@gmail.com', 'shay.mail@gmail.com']
 
     def push(self, body, title):
-        map(lambda email: self.__pb.push_note(body=body, email=email, title=title), self.__emails)
+        for email in self.__emails:
+            self.__pb.push_note(body=body, email=email, title=title)

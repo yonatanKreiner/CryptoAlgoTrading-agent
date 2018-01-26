@@ -13,6 +13,7 @@ class Bit2cClient:
         self.secret = secret
         self.base_url = base_url
         self.currency_converter = CurrencyConverter()
+        self.last_nonce = 0
 
     @staticmethod
     def add_nonce_to_params(params, nonce):
@@ -26,8 +27,14 @@ class Bit2cClient:
                                          hashlib.sha512).digest()).decode("ASCII").replace("\n", "")
 
     def query(self, method, url, params):
-        nonce = str(int(time.time()))
-        params_with_nonce = self.add_nonce_to_params(params, nonce)
+        nonce = int(time.time())
+
+        if nonce == self.last_nonce:
+            nonce += 1
+
+        self.last_nonce = nonce
+        print(str(nonce) + ' ' + url)
+        params_with_nonce = self.add_nonce_to_params(params, str(nonce))
 
         sign = self.compute_hash(params_with_nonce)
         headers = {'Key': self.key, 'Sign': sign, 'Content-Type': 'application/x-www-form-urlencoded'}
@@ -50,6 +57,11 @@ class Bit2cClient:
                '&IsBid=' + str(params["IsBid"]) + '&Pair=BtcNis'
 
         return self.query('POST', '/Order/AddOrder', data)
+
+    def sell_order(self, amount):
+        data = 'Amount=' + str(amount) + '&Pair=BtcNis'
+
+        return self.query('POST', '/Order/AddOrderMarketPriceSell', data)
 
     def get_order(self, order_id):
         return self.query('GET', '/Order/GetById', "id=" + str(order_id))
