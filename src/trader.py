@@ -219,13 +219,8 @@ class Trader:
             res = self.bit2Client.get_order(self.order_id)
 
             if 'Error' in res:
-                print(res['Error'])
-
                 if res['Error'] == 'No order found.':
                     return True
-
-            if 'status' not in res:
-                print(res)
 
             return res['status'] != 'Open'
 

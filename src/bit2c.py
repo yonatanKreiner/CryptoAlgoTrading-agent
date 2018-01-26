@@ -33,7 +33,6 @@ class Bit2cClient:
             nonce += 1
 
         self.last_nonce = nonce
-        print(str(nonce) + ' ' + url)
         params_with_nonce = self.add_nonce_to_params(params, str(nonce))
 
         sign = self.compute_hash(params_with_nonce)
