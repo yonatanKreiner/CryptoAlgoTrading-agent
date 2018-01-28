@@ -23,9 +23,9 @@ class Trader:
         self.offline = config['offline']
         self.agent = Agent(config, self.offline)
         self.ratio_manager = RatiosManager(self.sampling_time, self.ratios_time_length)
-        client = pymongo.MongoClient(
+        self.client = pymongo.MongoClient(
             'mongodb://bitteamisrael:Ariel241096@ds135667-a0.mlab.com:35667,ds135667-a1.mlab.com:35667/bitteamdb?replicaSet=rs-ds135667')
-        self.db = client.bitteamdb
+        self.client.close()
         self.log_initialize()
         self.bid_buy_chance_precentage = 30
         self.did_bid = False
@@ -89,12 +89,12 @@ class Trader:
     def initialize_ratios_list(self):
         if not self.offline:
             bit2c_docs = [x['bid'] / self.agent.fiat_rate for x in
-                          self.db['bit2c_newest'].find({}, {'bid': 1, '_id': False})
+                          self.client.bitteamdb['bit2c_newest'].find({}, {'bid': 1, '_id': False})
                               .sort([('date', pymongo.DESCENDING)]).limit(self.ratio_manager.list_length)]
             bitfinex_docs = [x['bid'] for x in
-                             self.db['bitfinex_newest'].find({}, {'bid': 1, '_id': False})
+                             self.client.bitteamdb['bitfinex_newest'].find({}, {'bid': 1, '_id': False})
                                  .sort([('date', pymongo.DESCENDING)]).limit(self.ratio_manager.list_length)]
-
+            self.client.close()
             ratios = []
 
             for i in range(len(bit2c_docs)):
@@ -234,7 +234,8 @@ class Trader:
     def db_safe_insert(self, collection, document):
         for i in range(5):
             try:
-                self.db[collection].insert_one(document)
+                self.client.bitteamdb[collection].insert_one(document)
+                self.client.close()
                 break
             except pymongo.errors.AutoReconnect:
                 self.log_error(str(datetime.utcnow()) + ' AutoReconnect')

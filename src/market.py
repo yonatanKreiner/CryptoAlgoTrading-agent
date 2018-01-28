@@ -25,6 +25,7 @@ class Market:
         self.db_data = [x for x in db[self.market.lower()].find({}, {'price': 1, 'bid': 1, 'ask': 1, 'date': 1, '_id': False}).sort("date")]
         self.object_count = db[self.market.lower()].count()
         self.index = 0
+        client.close()
 
     def get_prices(self):
         try:
