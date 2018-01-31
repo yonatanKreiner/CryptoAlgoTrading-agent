@@ -30,6 +30,7 @@ class Trader:
         self.bid_buy_chance_precentage = 30
         self.did_bid = False
         self.bid_price = 0
+        self.bid_fiat_price = 0
         self.bit2Client = Bit2cClient('https://bit2c.co.il',
                                       '340f106f-4e61-4a58-b4f0-9112b5f75b9b',
                                       'A88B7FB7FAC26C8B89A46277FB0E505E21758C43A4E5F02CA6AAC3BC7C5A6B2B')
@@ -79,6 +80,34 @@ class Trader:
 
         with open('./log.txt', 'a', encoding='UTF-8') as log_file:
             log_file.write(message)
+    
+    def log_bid(self, market, coins, money, bid_rate):
+        current_time = datetime.now()
+        message = 'Bid in ' + market.market + ', market ' + market.symbol + ' ' + str(coins) + ' coins for $' +\
+            str(money) + ' rate: ' + str(bid_rate) + ' at ' + str(current_time) + '\r\n'
+
+        if not self.offline:
+            log = {'method': 'bid', 'market': market.market, 'symbol': market.symbol,
+                   'amount:': coins, 'rate': bid_rate, 'money': money, 'timestamp': current_time}
+            self.db_safe_insert('online_transactions', log)
+            self.pushbullet.push(message, 'Biding crypto')
+
+        with open('./log.txt', 'a', encoding='UTF-8') as log_file:
+            log_file.write(message)
+    
+    def log_remove_bid(self, market, bid_rate):
+        current_time = datetime.now()
+        message = 'Remove bid in ' + market.market + ', market ' + market.symbol + ' rate: ' + \
+        str(bid_rate) + ' at ' + str(current_time) + '\r\n'
+
+        if not self.offline:
+            log = {'method': 'removeBid', 'market': market.market, 'symbol': market.symbol,
+                   'rate': bid_rate, 'timestamp': current_time}
+            self.db_safe_insert('online_transactions', log)
+            self.pushbullet.push(message, 'Biding crypto')
+
+        with open('./log.txt', 'a', encoding='UTF-8') as log_file:
+            log_file.write(message)
 
     @staticmethod
     def log_error(error):
@@ -89,10 +118,10 @@ class Trader:
     def initialize_ratios_list(self):
         if not self.offline:
             bit2c_docs = [x['bid'] / self.agent.fiat_rate for x in
-                          self.client.bitteamdb['bit2c_newest'].find({}, {'bid': 1, '_id': False})
+                          self.client.bitteamdb['bit2c'].find({}, {'bid': 1, '_id': False})
                               .sort([('date', pymongo.DESCENDING)]).limit(self.ratio_manager.list_length)]
             bitfinex_docs = [x['bid'] for x in
-                             self.client.bitteamdb['bitfinex_newest'].find({}, {'bid': 1, '_id': False})
+                             self.client.bitteamdb['bitfinex'].find({}, {'bid': 1, '_id': False})
                                  .sort([('date', pymongo.DESCENDING)]).limit(self.ratio_manager.list_length)]
             self.client.close()
             ratios = []
@@ -104,6 +133,7 @@ class Trader:
 
         while not self.ratio_manager.is_list_full():
             self.check_ratio(True)
+            time.sleep(self.ratio_manager.sampling_time)
 
     def trade(self):
         if self.offline:
@@ -131,18 +161,21 @@ class Trader:
 
                 if self.agent.can_buy and \
                         self.ratio_manager.average_ratio() - ratio > self.agent.minimum_buy_ratio_difference and \
-                        future_price - source_prices['bid'] > 100:
+                        future_price - source_prices['bid'] > 100: 
                     if not self.did_bid:
-                        self.bid_price = source_prices['bid'] + 1
-                        self.bid(self.money / self.bid_price, self.bid_price)
-                    elif source_prices['bid'] > self.bid_price:
-                        self.bid_price = source_prices['bid'] + 1
+                        self.bid_fiat_price = self.agent.source_market.prices['bid'] + 1
+                        self.bid_price = self.bid_fiat_price / self.agent.fiat_rate
+                        self.bid(self.money / self.bid_price, self.bid_fiat_price)
+                        self.log_bid(self.agent.source_market, self.coins, self.money / self.bid_price, self.bid_price)
+                    elif self.agent.source_market.prices['bid'] > self.bid_fiat_price:
+                        self.bid_fiat_price = self.agent.source_market.prices['bid'] + 1
+                        self.bid_price = self.bid_fiat_price / self.agent.fiat_rate
                         self.remove_bid()
-                        self.bid(self.money / self.bid_price, self.bid_price)
+                        self.bid(self.money / self.bid_price, self.bid_fiat_price)
 
                     if self.did_bid and self.did_buy_from_bid():
                         money = self.money
-                        self.coins = self.money / self.bid_price
+                        self.coins = self.money / self.bid_price * 0.995
                         self.money = 0
                         self.agent.can_buy = False
                         self.log_buy(self.agent.source_market, self.coins, money, self.bid_price)
@@ -161,7 +194,7 @@ class Trader:
                          self.stop_loss(source_prices['bid'])):
                     if self.sell(self.coins):
                         coins = self.coins
-                        self.money = self.coins * source_prices['bid']
+                        self.money = self.coins * source_prices['bid'] * 0.995
                         self.coins = 0
                         self.agent.can_buy = True
                         self.log_sell(self.agent.source_market, coins, self.money, source_prices['bid'])
@@ -178,6 +211,7 @@ class Trader:
                             self.offline_transactions['transactions'][-1]['money'] = self.money
                 elif self.did_bid:
                     self.remove_bid()
+                    self.log_remove_bid(self.agent.source_market, self.bid_price)
 
     def bid(self, amount, price):
         if self.offline:
@@ -221,7 +255,8 @@ class Trader:
             if 'Error' in res:
                 if res['Error'] == 'No order found.':
                     return True
-
+            if 'status' not in res:
+                print(res)
             return res['status'] != 'Open'
 
     def stop_loss(self, current_bid):

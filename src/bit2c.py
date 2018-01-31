@@ -52,7 +52,7 @@ class Bit2cClient:
 
     def add_order(self, params):
         data = 'Amount=' + str(params["Amount"]) + \
-               '&Price=' + str(params["Price"] * self.currency_converter.get_rate()) + \
+               '&Price=' + str(params["Price"]) + \
                '&IsBid=' + str(params["IsBid"]) + '&Pair=BtcNis'
 
         return self.query('POST', '/Order/AddOrder', data)

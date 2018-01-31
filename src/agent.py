@@ -38,8 +38,10 @@ class Agent:
         if prices is None:
             return None
 
+        converted_prices = {}
+
         for key in prices:
             if key != 'date':
-                prices[key] = prices[key] / self.fiat_rate
+                converted_prices[key] = prices[key] / self.fiat_rate
 
-        return prices
+        return converted_prices
