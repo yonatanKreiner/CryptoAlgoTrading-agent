@@ -104,7 +104,7 @@ class Trader:
             log = {'method': 'removeBid', 'market': market.market, 'symbol': market.symbol,
                    'rate': bid_rate, 'timestamp': current_time}
             self.db_safe_insert('online_transactions', log)
-            self.pushbullet.push(message, 'Biding crypto')
+            self.pushbullet.push(message, 'Remove crypto')
 
         with open('./log.txt', 'a', encoding='UTF-8') as log_file:
             log_file.write(message)
@@ -178,6 +178,7 @@ class Trader:
                         self.coins = self.money / self.bid_price * 0.995
                         self.money = 0
                         self.agent.can_buy = False
+                        self.did_bid = False
                         self.log_buy(self.agent.source_market, self.coins, money, self.bid_price)
 
                         if self.offline:
