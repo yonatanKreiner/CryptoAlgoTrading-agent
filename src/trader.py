@@ -262,7 +262,7 @@ class Trader:
 
     def stop_loss(self, current_bid):
         change_percentage = ((float(current_bid) - self.bid_price) / self.bid_price) * 100
-        if change_percentage > self.stop_loss_percentage:
+        if change_percentage <= -self.stop_loss_percentage:
             return True
         else:
             return False
