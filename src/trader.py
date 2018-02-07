@@ -175,7 +175,12 @@ class Trader:
 
                     if self.did_bid and self.did_buy_from_bid():
                         money = self.money
-                        self.coins = self.money / self.bid_price * 0.995
+
+                        if self.offline:
+                            self.coins = self.money / self.bid_price * 0.995
+                        else:
+                            self.coins = Bit2cClient.get_balance()["AVAILABLE_BTC"]
+
                         self.money = 0
                         self.agent.can_buy = False
                         self.did_bid = False
