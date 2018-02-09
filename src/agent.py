@@ -43,5 +43,7 @@ class Agent:
         for key in prices:
             if key != 'date':
                 converted_prices[key] = prices[key] / self.fiat_rate
+            else:
+                converted_prices[key] = prices[key]
 
         return converted_prices
