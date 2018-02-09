@@ -133,7 +133,8 @@ class Trader:
 
         while not self.ratio_manager.is_list_full():
             self.check_ratio(True)
-            time.sleep(self.ratio_manager.sampling_time)
+            if not self.offline:
+                time.sleep(self.ratio_manager.sampling_time)
 
     def trade(self):
         if self.offline:
@@ -160,7 +161,7 @@ class Trader:
                 future_price = self.ratio_manager.average_ratio() * destination_prices['bid']
 
                 if self.agent.can_buy and \
-                        self.ratio_manager.average_ratio() - ratio > self.agent.minimum_buy_ratio_difference and \
+                        ratio / self.ratio_manager.average_ratio() < 0.95 and \
                         future_price - source_prices['bid'] > 100: 
                     if not self.did_bid:
                         self.bid_fiat_price = self.agent.source_market.prices['bid'] + 1
@@ -179,7 +180,7 @@ class Trader:
                         if self.offline:
                             self.coins = self.money / self.bid_price * 0.995
                         else:
-                            self.coins = Bit2cClient.get_balance()["AVAILABLE_BTC"]
+                            self.coins = self.bit2Client.get_balance()["AVAILABLE_BTC"]
 
                         self.money = 0
                         self.agent.can_buy = False
@@ -196,7 +197,7 @@ class Trader:
                                 'ratio': self.ratio_manager.average_ratio()
                             }})
                 elif not self.agent.can_buy and \
-                        (self.ratio_manager.average_ratio() - ratio <= self.agent.minimum_sell_ratio_difference or
+                        (ratio / self.ratio_manager.average_ratio() >= 0.99 or
                          self.stop_loss(source_prices['bid'])):
                     if self.sell(self.coins):
                         coins = self.coins
@@ -232,7 +233,9 @@ class Trader:
                 self.did_bid = True
 
     def sell(self, amount):
-        if not self.offline:
+        if self.offline:
+            return True
+        else:
             res = self.bit2Client.sell_order(amount)
 
             if res['OrderResponse']['HasError']:
