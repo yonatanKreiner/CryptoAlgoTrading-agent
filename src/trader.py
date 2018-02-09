@@ -175,7 +175,12 @@ class Trader:
 
                     if self.did_bid and self.did_buy_from_bid():
                         money = self.money
-                        self.coins = self.money / self.bid_price * 0.995
+
+                        if self.offline:
+                            self.coins = self.money / self.bid_price * 0.995
+                        else:
+                            self.coins = Bit2cClient.get_balance()["AVAILABLE_BTC"]
+
                         self.money = 0
                         self.agent.can_buy = False
                         self.did_bid = False
@@ -262,7 +267,7 @@ class Trader:
 
     def stop_loss(self, current_bid):
         change_percentage = ((float(current_bid) - self.bid_price) / self.bid_price) * 100
-        if change_percentage > self.stop_loss_percentage:
+        if change_percentage <= -self.stop_loss_percentage:
             return True
         else:
             return False
