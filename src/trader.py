@@ -161,7 +161,7 @@ class Trader:
                 future_price = self.ratio_manager.average_ratio() * destination_prices['bid']
 
                 if self.agent.can_buy and \
-                        ratio / self.ratio_manager.average_ratio() < 0.95 and \
+                        ratio / self.ratio_manager.average_ratio() < self.agent.minimum_buy_ratio_difference and \
                         future_price - source_prices['bid'] > 100: 
                     if not self.did_bid:
                         self.bid_fiat_price = self.agent.source_market.prices['bid'] + 1
@@ -197,7 +197,7 @@ class Trader:
                                 'ratio': self.ratio_manager.average_ratio()
                             }})
                 elif not self.agent.can_buy and \
-                        (ratio / self.ratio_manager.average_ratio() >= 0.99 or
+                        (ratio / self.ratio_manager.average_ratio() >= self.agent.minimum_sell_ratio_difference or
                          self.stop_loss(source_prices['bid'])):
                     if self.sell(self.coins):
                         coins = self.coins
