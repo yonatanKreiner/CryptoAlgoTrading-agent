@@ -4,7 +4,7 @@ import hmac
 import time
 import requests
 
-from src.currency_converter import CurrencyConverter
+from ..utils.currency_converter import CurrencyConverter
 
 
 class Bit2cClient:
