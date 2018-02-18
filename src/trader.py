@@ -61,7 +61,7 @@ class Trader:
 
     def trade(self):
         if self.offline:
-            for x in range(self.agent.samples_count):
+            for x in range(self.agent.samples_count - self.ratio_manager.list_length):
                 self.check_ratio()
 
             self.db.db_safe_insert('offline_transactions', self.offline_transactions)
