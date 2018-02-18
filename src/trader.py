@@ -45,8 +45,8 @@ class Trader:
 
     def initialize_ratios_list(self):
         if not self.offline:
-            bit2c_docs = [x['bid'] / self.agent.fiat_rate for x in self.db.get_tickers('bit2c', self.ratio_manager.list_length)]
-            bitfinex_docs = [x['bid'] for x in self.db.get_tickers('bitfinex', self.ratio_manager.list_length)]
+            bit2c_docs = [x['bid'] / self.agent.fiat_rate for x in self.db.get_tickers(self.agent.source_market.market.lower(), self.ratio_manager.list_length)]
+            bitfinex_docs = [x['bid'] for x in self.db.get_tickers(self.agent.destination_market.market.lower(), self.ratio_manager.list_length)]
             ratios = []
 
             for i in range(len(bit2c_docs)):
