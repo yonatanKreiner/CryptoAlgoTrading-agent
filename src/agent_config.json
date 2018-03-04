@@ -1,7 +1,7 @@
 {
   "source": {
-    "market": "Bit2C_local",
-    "symbol": "BTCNIS_local",
+    "market": "Bit2C",
+    "symbol": "BTCNIS",
     "api": "https://www.bit2c.co.il/Exchanges/BtcNis/Ticker.json",
     "buy_fee": "0.005",
     "sell_fee": "0.005",
@@ -24,10 +24,10 @@
   "fiat_symbol": "ILS",
   "fiat_rate_api": "https://api.fixer.io/latest?base=USD&symbols=ILS",
   "fiat_start_price": 3.5,
-  "minimum_buy_ratio_difference": 0.95,
+  "minimum_buy_ratio_difference": 0.985,
   "minimum_sell_ratio_difference": 0.99,
   "sampling_time": 3,
-  "ratios_time_length": 24,
+  "ratios_time_length": 6,
   "stop_loss_percentage": 3,
-  "offline": true
+  "offline": false
 }

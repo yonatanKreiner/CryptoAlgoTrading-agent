@@ -85,7 +85,7 @@ class Trader:
 
                 if self.agent.can_buy and \
                         ratio / self.ratio_manager.average_ratio() < self.agent.minimum_buy_ratio_difference and \
-                        future_price - source_prices['bid'] > 100: 
+                        future_price - source_prices['bid'] > 10:
                     if not self.did_bid:
                         self.bid_fiat_price = self.agent.source_market.prices['bid'] + 1
                         self.bid_price = self.bid_fiat_price / self.agent.fiat_rate
@@ -104,7 +104,13 @@ class Trader:
                         if self.offline:
                             self.coins = self.money / self.bid_price * 0.995
                         else:
-                            self.coins = self.bit2Client.get_balance()["AVAILABLE_BTC"]
+                            balance = self.bit2Client.get_balance()
+
+                            try:
+                                self.coins = balance["AVAILABLE_BTC"]
+                            except Exception:
+                                print(balance)
+                            
 
                         self.money = 0
                         self.agent.can_buy = False

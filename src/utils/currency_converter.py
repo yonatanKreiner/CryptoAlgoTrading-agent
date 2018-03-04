@@ -12,7 +12,7 @@ class CurrencyConverter:
 
     def get_rate(self):
         try:
-            res = requests.get(self.fiat_rate_api).json()
+            res = requests.get(self.fiat_rate_api, timeout=10).json()
             self.fiat_rate = res['rates'][self.fiat_symbol]
         except Exception:
             pass

@@ -51,7 +51,7 @@ class Logger:
             log = {'method': 'bid', 'market': market.market, 'symbol': market.symbol,
                    'amount:': coins, 'rate': bid_rate, 'money': money, 'timestamp': current_time}
             self.db.db_safe_insert('online_transactions', log)
-            self.pushbullet.push(message, 'Biding crypto')
+            #self.pushbullet.push(message, 'Biding crypto')
 
         with open('./log.txt', 'a', encoding='UTF-8') as log_file:
             log_file.write(message)
@@ -65,7 +65,7 @@ class Logger:
             log = {'method': 'removeBid', 'market': market.market, 'symbol': market.symbol,
                    'rate': bid_rate, 'timestamp': current_time}
             self.db.db_safe_insert('online_transactions', log)
-            self.pushbullet.push(message, 'Remove crypto')
+            #self.pushbullet.push(message, 'Remove crypto')
 
         with open('./log.txt', 'a', encoding='UTF-8') as log_file:
             log_file.write(message)

@@ -29,8 +29,9 @@ class Bit2cClient:
     def query(self, method, url, params):
         nonce = int(time.time())
 
-        if nonce == self.last_nonce:
-            nonce += 1
+        if nonce <= self.last_nonce:
+            #nonce += 1
+            nonce = self.last_nonce + 1
 
         self.last_nonce = nonce
         params_with_nonce = self.add_nonce_to_params(params, str(nonce))
@@ -41,9 +42,9 @@ class Bit2cClient:
         res = None
 
         if method == 'GET':
-            res = requests.get(self.base_url + url + '?' + params_with_nonce, headers=headers)
+            res = requests.get(self.base_url + url + '?' + params_with_nonce, headers=headers, timeout=10)
         elif method == 'POST':
-            res = requests.post(self.base_url + url, data=params_with_nonce, headers=headers)
+            res = requests.post(self.base_url + url, data=params_with_nonce, headers=headers, timeout=10)
 
         return res.json()
 

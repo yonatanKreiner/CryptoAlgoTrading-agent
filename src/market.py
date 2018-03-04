@@ -45,7 +45,7 @@ class Market:
                     'date': res['date']
                 }
             else:
-                res = requests.get(self.api, proxies=self.proxy).json()
+                res = requests.get(self.api, proxies=self.proxy, timeout=10).json()
                 self.prices = {
                     'last': float(res[self.price_types['last']]),
                     'bid': float(res[self.price_types['bid']]),
