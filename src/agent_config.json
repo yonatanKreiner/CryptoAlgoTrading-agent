@@ -2,7 +2,7 @@
   "source": {
     "market": "Bit2C",
     "symbol": "BTCNIS",
-    "api": "https://www.bit2c.co.il/Exchanges/BtcNis/Ticker.json",
+    "api": "https://bit2c.co.il/Exchanges/BtcNis/Ticker.json",
     "buy_fee": "0.005",
     "sell_fee": "0.005",
     "last_price_key": "ll",
@@ -29,5 +29,5 @@
   "sampling_time": 3,
   "ratios_time_length": 24,
   "stop_loss_percentage": 3,
-  "offline": true
+  "offline": false
 }
