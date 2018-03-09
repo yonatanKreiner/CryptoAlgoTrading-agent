@@ -21,4 +21,4 @@ class Proxy:
         }
     
     def get(self, url):
-        return requests.get(url, proxies=self.__get_proxy_address(), timeout=10)
+        return requests.get(url, proxies=self.__get_proxy_address(), timeout=5)
