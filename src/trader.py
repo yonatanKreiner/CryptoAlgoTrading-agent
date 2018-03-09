@@ -11,24 +11,25 @@ from .markets.market_api import MarketAPI
 
 class Trader:
     def __init__(self, config, starting_money):
-        self.logger = Logger(config)
+        self.db = DB(config)
+        self.logger = Logger(config, self.db)
         self.sampling_time = config['sampling_time']
+        self.ratios_sampling_time = config['ratios_sampling_time']
         self.ratios_time_length = config['ratios_time_length']
         self.money = starting_money
         self.coins = 0
         self.order_id = 0
         self.stop_loss_percentage = config['stop_loss_percentage']
         self.offline = config['offline']
-        self.agent = Agent(config, self.offline)
-        self.ratio_manager = RatiosManager(self.sampling_time, self.ratios_time_length)
-        self.db = DB(config)
+        self.agent = Agent(config, self.db, self.offline)
+        self.ratio_manager = RatiosManager(self.sampling_time, self.ratios_sampling_time, self.ratios_time_length)
         self.did_bid = False
         self.bid_price = 0
         self.bid_fiat_price = 0
         self.bit2Client = Bit2cClient('https://bit2c.co.il',
                                       '340f106f-4e61-4a58-b4f0-9112b5f75b9b',
                                       'A88B7FB7FAC26C8B89A46277FB0E505E21758C43A4E5F02CA6AAC3BC7C5A6B2B')
-        self.market_api = MarketAPI(config)
+        self.market_api = MarketAPI(self.db, config)
 
         if self.offline:
             self.offline_transactions = {  # We are going to use it as a dictionary of documents of offline transactions
@@ -81,11 +82,8 @@ class Trader:
             self.ratio_manager.add_ratio(ratio)
 
             if not initialization:
-                future_price = self.ratio_manager.average_ratio() * destination_prices['bid']
-
                 if self.agent.can_buy and \
-                        ratio / self.ratio_manager.average_ratio() < self.agent.minimum_buy_ratio_difference and \
-                        future_price - source_prices['bid'] > 10:
+                        self.ratio_manager.average_ratio() - ratio > self.agent.minimum_buy_ratio_difference:
                     if not self.did_bid:
                         self.bid_fiat_price = self.agent.source_market.prices['bid'] + 1
                         self.bid_price = self.bid_fiat_price / self.agent.fiat_rate
@@ -127,7 +125,7 @@ class Trader:
                                 'ratio': self.ratio_manager.average_ratio()
                             }})
                 elif not self.agent.can_buy and \
-                        (ratio / self.ratio_manager.average_ratio() >= self.agent.minimum_sell_ratio_difference or
+                         (self.ratio_manager.average_ratio() - ratio <= self.agent.minimum_sell_ratio_difference or
                          self.stop_loss(source_prices['bid'])):
                     if self.market_api.sell(self.coins):
                         coins = self.coins
@@ -152,29 +150,8 @@ class Trader:
 
     def stop_loss(self, current_bid):
         change_percentage = ((float(current_bid) - self.bid_price) / self.bid_price) * 100
+
         if change_percentage <= -self.stop_loss_percentage:
             return True
         else:
             return False
-
-    @staticmethod
-    def calc_min_ratio_diff(source_prices, destination_prices):
-        source_ask_price = source_prices['ask']
-        source_bid_price = source_prices['bid']
-        source_last_price = source_prices['last']
-        destination_last_price = destination_prices['last']
-        source_ask_bid_margin = source_ask_price - source_bid_price
-        regular_ratio = destination_last_price / source_last_price
-        # fees are supposed to be calculated as the following:
-        # amount of money we are going to buy with * 0.005(0.5% commission)
-        # +
-        # amount of money we are going to get after sell * 0.005(0.5% commission)
-        # For now i used 65 which stands for:
-        # 20000 * 0.005 = 100
-        # 25000 * 0.005 = 125 (Assuming we gained 25$ on the deal)
-        # 225 / USDILS rate(3.51) = 64.10256...(ceiling)
-        fees = 65
-        profitable_ratio = (destination_last_price + source_ask_bid_margin + fees) / source_last_price
-        min_ratio = profitable_ratio - regular_ratio
-
-        return min_ratio

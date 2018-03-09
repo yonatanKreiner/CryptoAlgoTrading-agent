@@ -1,12 +1,11 @@
 from datetime import datetime
 from .pushbullet_client import PushbulletClient
-from .DB import DB
 
 class Logger:
-    def __init__(self, config):
+    def __init__(self, config, db):
         self.offline = config['offline']
         self.pushbullet = PushbulletClient()
-        self.db = DB(config)
+        self.db = db
         self.log_initialize()
 
     @staticmethod

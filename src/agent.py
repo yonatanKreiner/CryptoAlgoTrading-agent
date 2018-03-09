@@ -3,20 +3,20 @@ import requests
 
 
 class Agent:
-    def __init__(self, config, offline):
+    def __init__(self, config, db, offline):
         self.fiat_rate_api = config['fiat_rate_api']
         self.fiat_symbol = config['fiat_symbol']
         self.fiat_rate = config['fiat_start_price']
         self.can_buy = True
-        self.source_market = Market(config['source'], offline)
-        self.destination_market = Market(config['destination'], offline)
+        self.source_market = Market(config['source'], db, offline)
+        self.destination_market = Market(config['destination'], db, offline)
         self.minimum_buy_ratio_difference = config['minimum_buy_ratio_difference']
         self.minimum_sell_ratio_difference = config['minimum_sell_ratio_difference']
         self.offline = offline
         self.update_fiat_rate()
 
         if offline:
-            self.samples_count = min(len(self.source_market.db_data), len(self.destination_market.db_data))
+            self.samples_count = min(self.source_market.object_count, self.destination_market.object_count)
 
     def get_market_prices(self, market):
         if market == 'source':
@@ -26,10 +26,10 @@ class Agent:
 
     def update_fiat_rate(self):
         try:
-            res = requests.get(self.fiat_rate_api, timeout=10).json()
+            res = requests.get(self.fiat_rate_api, timeout=0.5).json()
             self.fiat_rate = res['rates'][self.fiat_symbol]
-        except Exception:
-            pass
+        except Exception as e:
+            print('update_fiat_rate exception:\n' + str(e) + '\n')
 
     def convert_prices(self, prices):
         if not self.offline:

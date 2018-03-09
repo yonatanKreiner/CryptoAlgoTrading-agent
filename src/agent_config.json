@@ -26,8 +26,9 @@
   "fiat_start_price": 3.5,
   "minimum_buy_ratio_difference": 0.985,
   "minimum_sell_ratio_difference": 0.99,
-  "sampling_time": 3,
+  "sampling_time": 0.5,
+  "ratios_sampling_time": 3,
   "ratios_time_length": 6,
   "stop_loss_percentage": 3,
-  "offline": false
+  "offline": true
 }

@@ -1,9 +1,9 @@
-import requests
 from pymongo import MongoClient
+from .utils.proxy import Proxy
 
 
 class Market:
-    def __init__(self, config, offline):
+    def __init__(self, config, db, offline):
         self.market = config['market']
         self.symbol = config['symbol']
         self.api = config['api']
@@ -13,25 +13,17 @@ class Market:
             'ask': config['ask_key']
         }
         self.prices = {}
-        self.buy_fee = config['buy_fee']
-        self.sell_fee = config['sell_fee']
         self.offline = offline
-        self.proxy = {
-            'http': 'http://lum-customer-hl_e26add8d-zone-static:h9lsd1exrlcr@zproxy.luminati.io:22225',
-            'https': 'http://lum-customer-hl_e26add8d-zone-static:h9lsd1exrlcr@zproxy.luminati.io:22225'
-        }
+        self.proxy = Proxy()
+        self.db = db
 
         if self.offline:
             self.__initialize_prices()
+            self.index = 0
 
     def __initialize_prices(self):
-        # client = MongoClient('mongodb://ariel:ariel@ds127536.mlab.com:27536/collector')
-        client = MongoClient('mongodb://bitteamisrael:Ariel241096@ds135667-a0.mlab.com:35667,ds135667-a1.mlab.com:35667/bitteamdb?replicaSet=rs-ds135667')
-        db = client.bitteamdb
-        self.db_data = [x for x in db[self.market.lower()].find({}, {'price': 1, 'bid': 1, 'ask': 1, 'date': 1, '_id': False}).sort("date")]
-        self.object_count = db[self.market.lower()].count()
-        self.index = 0
-        client.close()
+        self.db_data = [x for x in self.db.get_tickers(self.market.lower())]
+        self.object_count = len(self.db_data)
 
     def get_prices(self):
         try:
@@ -45,7 +37,7 @@ class Market:
                     'date': res['date']
                 }
             else:
-                res = requests.get(self.api, proxies=self.proxy, timeout=10).json()
+                res = self.proxy.get(self.api).json()
                 self.prices = {
                     'last': float(res[self.price_types['last']]),
                     'bid': float(res[self.price_types['bid']]),
@@ -54,4 +46,5 @@ class Market:
 
             return self.prices
         except Exception as e:
+            print('get_prices exception:' + self.market + '\n' + str(e) + '\n')
             return None
