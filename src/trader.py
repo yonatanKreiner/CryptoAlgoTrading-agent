@@ -14,7 +14,6 @@ class Trader:
         self.db = DB(config)
         self.logger = Logger(config, self.db)
         self.sampling_time = config['sampling_time']
-        self.ratios_sampling_time = config['ratios_sampling_time']
         self.ratios_time_length = config['ratios_time_length']
         self.money = starting_money
         self.coins = 0
@@ -22,7 +21,7 @@ class Trader:
         self.stop_loss_percentage = config['stop_loss_percentage']
         self.offline = config['offline']
         self.agent = Agent(config, self.db, self.offline)
-        self.ratio_manager = RatiosManager(self.sampling_time, self.ratios_sampling_time, self.ratios_time_length)
+        self.ratio_manager = RatiosManager(self.sampling_time, self.ratios_time_length)
         self.did_bid = False
         self.bid_price = 0
         self.bid_fiat_price = 0
@@ -74,8 +73,6 @@ class Trader:
     def check_ratio(self, initialization=False):
         source_prices = self.agent.get_market_prices('source')
         destination_prices = self.agent.get_market_prices('destination')
-
-        # minimum_ratio_difference = self.calc_min_ratio_diff(source_prices, destination_prices)
 
         if source_prices is not None and destination_prices is not None:
             ratio = source_prices['bid'] / destination_prices['bid']

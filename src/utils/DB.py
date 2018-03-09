@@ -8,9 +8,9 @@ class DB:
         self.client = pymongo.MongoClient(
             'mongodb://bitteamisrael:Ariel241096@ds135667-a0.mlab.com:35667,ds135667-a1.mlab.com:35667/bitteamdb?replicaSet=rs-ds135667')
     
-    def get_tickers(self, collection, limit = 0):
+    def get_tickers(self, collection, sort = -1, limit = 0):
         return self.client.bitteamdb[collection].find({}, 
-        {'price': 1, 'bid': 1, 'ask': 1, 'date': 1, '_id': False}).sort([('date', pymongo.DESCENDING)]).limit(limit)
+        {'price': 1, 'bid': 1, 'ask': 1, 'date': 1, '_id': False}).sort([('date', sort)]).limit(limit)
     
     def db_safe_insert(self, collection, document):
         for i in range(5):
