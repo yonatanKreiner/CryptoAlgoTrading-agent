@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import time
 import requests
+from ..utils.proxy import Proxy
 
 from ..utils.currency_converter import CurrencyConverter
 
@@ -14,6 +15,7 @@ class Bit2cClient:
         self.base_url = base_url
         self.currency_converter = CurrencyConverter()
         self.last_nonce = 0
+        self.proxy = Proxy()
 
     @staticmethod
     def add_nonce_to_params(params, nonce):
@@ -43,9 +45,9 @@ class Bit2cClient:
 
         try:
             if method == 'GET':
-                res = requests.get(self.base_url + url + '?' + params_with_nonce, headers=headers, timeout=10)
+                res = self.proxy.safe_get(url=self.base_url + url + '?' + params_with_nonce, headers=headers, timeout=10)
             elif method == 'POST':
-                res = requests.post(self.base_url + url, data=params_with_nonce, headers=headers, timeout=10)
+                res = self.proxy.safe_post(url=self.base_url + url, data=params_with_nonce, headers=headers, timeout=10)
         except Exception as e:
             print('bit2c query: ' + url + ' exception\n' + str(e))
 

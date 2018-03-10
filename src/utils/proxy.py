@@ -22,3 +22,28 @@ class Proxy:
     
     def get(self, url):
         return requests.get(url, proxies=self.__get_proxy_address(), timeout=5)
+
+    def safe_get(self, url, headers, timeout):
+        res = None
+        isOk = False
+        while isOk:
+            try:
+                res = requests.get(url, headers=headers, timeout=timeout)
+                isOk = True
+            except requests.exceptions.Timeout as e:
+                print('safe get: ' + url + ' exception\n' + str(e))
+        
+        return res
+    
+    def safe_post(self, url, data, headers, timeout):
+        res = None
+        isOk = False
+        while isOk:
+            try:
+                res = requests.post(url, data=data, headers=headers, timeout=timeout)
+                isOk = True
+            except requests.exceptions.Timeout as e:
+                print('safe post: ' + url + ' exception\n' + str(e))
+        
+        return res
+        
