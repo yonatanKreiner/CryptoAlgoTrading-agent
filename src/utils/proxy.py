@@ -26,7 +26,7 @@ class Proxy:
     def safe_get(self, url, headers, timeout):
         res = None
         isOk = False
-        while isOk:
+        while not isOk:
             try:
                 res = requests.get(url, headers=headers, timeout=timeout)
                 isOk = True
@@ -38,7 +38,7 @@ class Proxy:
     def safe_post(self, url, data, headers, timeout):
         res = None
         isOk = False
-        while isOk:
+        while not isOk:
             try:
                 res = requests.post(url, data=data, headers=headers, timeout=timeout)
                 isOk = True
