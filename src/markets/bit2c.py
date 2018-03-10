@@ -43,9 +43,9 @@ class Bit2cClient:
 
         try:
             if method == 'GET':
-                res = requests.get(self.base_url + url + '?' + params_with_nonce, headers=headers, timeout=3)
+                res = requests.get(self.base_url + url + '?' + params_with_nonce, headers=headers, timeout=10)
             elif method == 'POST':
-                res = requests.post(self.base_url + url, data=params_with_nonce, headers=headers, timeout=3)
+                res = requests.post(self.base_url + url, data=params_with_nonce, headers=headers, timeout=10)
         except Exception as e:
             print('bit2c query: ' + url + ' exception\n' + str(e))
 
