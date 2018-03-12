@@ -3,18 +3,17 @@ import requests
 
 
 class CurrencyConverter:
-    def __init__(self):
-        config = json.load(open('src/agent_config.json'))
-        self.fiat_rate_api = config['fiat_rate_api']
-        self.fiat_symbol = config['fiat_symbol']
+    def __init__(self, config):
+        self.__fiat_rate_api = config['fiat_rate_api']
+        self.__fiat_symbol = config['fiat_symbol']
         self.fiat_rate = config['fiat_start_price']
-        self.get_rate()
 
-    def get_rate(self):
+        if not config['offline']:
+            self.update_fiat_rate()
+
+    def update_fiat_rate(self):
         try:
-            res = requests.get(self.fiat_rate_api, timeout=10).json()
-            self.fiat_rate = res['rates'][self.fiat_symbol]
+            res = requests.get(self.__fiat_rate_api, timeout=1).json()
+            self.fiat_rate = res['rates'][self.__fiat_symbol]
         except Exception:
-            pass
-
-        return self.fiat_rate
+            print('update_fiat_rate exception:\n' + str(e) + '\n')

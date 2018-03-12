@@ -5,15 +5,12 @@ import time
 import requests
 from ..utils.proxy import Proxy
 
-from ..utils.currency_converter import CurrencyConverter
-
 
 class Bit2cClient:
     def __init__(self, base_url, key, secret):
         self.key = key
         self.secret = secret
         self.base_url = base_url
-        self.currency_converter = CurrencyConverter()
         self.last_nonce = 0
         self.proxy = Proxy()
 

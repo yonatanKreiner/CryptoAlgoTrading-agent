@@ -7,11 +7,14 @@ from .ratios_manager import RatiosManager
 from .markets.bit2c import Bit2cClient
 from .utils.logger import Logger
 from .utils.DB import DB
+from .utils.currency_converter import CurrencyConverter
 from .markets.market_api import MarketAPI
 
 class Trader:
     def __init__(self, config, starting_money):
+        self.offline = config['offline']
         self.db = DB(config)
+        self.currency_converter = CurrencyConverter(config)
         self.logger = Logger(config, self.db)
         self.sampling_time = config['sampling_time']
         self.ratios_time_length = config['ratios_time_length']
@@ -19,8 +22,7 @@ class Trader:
         self.coins = 0
         self.order_id = 0
         self.stop_loss_percentage = config['stop_loss_percentage']
-        self.offline = config['offline']
-        self.agent = Agent(config, self.db, self.offline)
+        self.agent = Agent(config, self.db, self.currency_converter, self.offline)
         self.ratio_manager = RatiosManager(self.sampling_time, self.ratios_time_length)
         self.did_bid = False
         self.bid_price = 0
@@ -45,7 +47,7 @@ class Trader:
 
     def initialize_ratios_list(self):
         if not self.offline:
-            bit2c_docs = [x['bid'] / self.agent.fiat_rate for x in self.db.get_tickers(self.agent.source_market.market.lower(), limit=self.ratio_manager.list_length)]
+            bit2c_docs = [x['bid'] / self.currency_converter.fiat_rate for x in self.db.get_tickers(self.agent.source_market.market.lower(), limit=self.ratio_manager.list_length)]
             bitfinex_docs = [x['bid'] for x in self.db.get_tickers(self.agent.destination_market.market.lower(), limit=self.ratio_manager.list_length)]
             ratios = []
 
@@ -68,6 +70,7 @@ class Trader:
         else:
             while True:
                 self.check_ratio()
+                self.currency_converter.update_fiat_rate()
                 time.sleep(self.ratio_manager.sampling_time)
 
     def check_ratio(self, initialization=False):
@@ -83,13 +86,13 @@ class Trader:
                         self.ratio_manager.average_ratio() - ratio > self.agent.minimum_buy_ratio_difference:
                     if not self.did_bid:
                         self.bid_fiat_price = self.agent.source_market.prices['bid'] + 1
-                        self.bid_price = self.bid_fiat_price / self.agent.fiat_rate
+                        self.bid_price = self.bid_fiat_price / self.currency_converter.fiat_rate
                         self.did_bid = self.market_api.bid(self.money / self.bid_price, self.bid_fiat_price, self.did_bid)
 
                         self.logger.log_bid(self.agent.source_market, self.coins, self.money / self.bid_price, self.bid_price)
                     elif self.agent.source_market.prices['bid'] > self.bid_fiat_price:
                         self.bid_fiat_price = self.agent.source_market.prices['bid'] + 1
-                        self.bid_price = self.bid_fiat_price / self.agent.fiat_rate
+                        self.bid_price = self.bid_fiat_price / self.currency_converter.fiat_rate
                         self.did_bid = self.market_api.remove_bid(self.did_bid)
                         self.did_bid = self.market_api.bid(self.money / self.bid_price, self.bid_fiat_price, self.did_bid)
 
