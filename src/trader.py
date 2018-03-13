@@ -27,9 +27,6 @@ class Trader:
         self.did_bid = False
         self.bid_price = 0
         self.bid_fiat_price = 0
-        self.bit2Client = Bit2cClient('https://bit2c.co.il',
-                                      '340f106f-4e61-4a58-b4f0-9112b5f75b9b',
-                                      'A88B7FB7FAC26C8B89A46277FB0E505E21758C43A4E5F02CA6AAC3BC7C5A6B2B')
         self.market_api = MarketAPI(self.db, config)
 
         if self.offline:
@@ -102,13 +99,7 @@ class Trader:
                         if self.offline:
                             self.coins = self.money / self.bid_price * 0.995
                         else:
-                            balance = self.bit2Client.get_balance()
-
-                            try:
-                                self.coins = balance["AVAILABLE_BTC"]
-                            except Exception:
-                                print(balance)
-                            
+                            self.coins = self.market_api.get_balance()                            
 
                         self.money = 0
                         self.agent.can_buy = False
@@ -151,7 +142,4 @@ class Trader:
     def stop_loss(self, current_bid):
         change_percentage = ((float(current_bid) - self.bid_price) / self.bid_price) * 100
 
-        if change_percentage <= -self.stop_loss_percentage:
-            return True
-        else:
-            return False
+        return change_percentage <= -self.stop_loss_percentage

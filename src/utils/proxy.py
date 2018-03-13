@@ -8,6 +8,7 @@ class Proxy:
         self.server = 'servercountry-us.zproxy.luminati.io:22225'
         self.session = range(10)
         self.current_session = 0
+        self.proxies = self.__get_proxy_address()
 
     def __get_proxy_address(self):
         proxy = 'http://' + self.username + '-session-' + str(self.session[self.current_session]) + \
@@ -21,7 +22,7 @@ class Proxy:
         }
     
     def get(self, url):
-        return requests.get(url, proxies=self.__get_proxy_address(), timeout=5)
+        return requests.get(url, proxies=self.proxies, timeout=5)
 
     def safe_get(self, url, headers, timeout):
         res = None

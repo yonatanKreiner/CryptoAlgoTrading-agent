@@ -65,3 +65,6 @@ class MarketAPI:
                 return False
             else:
                 return True
+    
+    def get_balance(self):
+        return self.client.get_balance()['AVAILABLE_BTC']
