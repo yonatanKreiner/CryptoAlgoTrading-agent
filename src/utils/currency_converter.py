@@ -15,5 +15,5 @@ class CurrencyConverter:
         try:
             res = requests.get(self.__fiat_rate_api, timeout=1).json()
             self.fiat_rate = res['rates'][self.__fiat_symbol]
-        except Exception:
+        except Exception as e:
             print('update_fiat_rate exception:\n' + str(e) + '\n')
