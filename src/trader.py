@@ -27,7 +27,7 @@ class Trader:
         self.did_bid = False
         self.bid_price = 0
         self.bid_fiat_price = 0
-        self.market_api = MarketAPI(self.db, config)
+        self.market_api = MarketAPI(self.db, self.logger, config)
 
         if self.offline:
             self.offline_transactions = {  # We are going to use it as a dictionary of documents of offline transactions

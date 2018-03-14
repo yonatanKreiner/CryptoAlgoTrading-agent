@@ -73,4 +73,4 @@ class Logger:
     def log_error(error):
         with open('./log.txt', 'a', encoding='UTF-8') as log_file:
             log_file.write(
-                'Error: ' + error + ' At ' + str(datetime.now()) + '\r\n')
+                'Error: ' + str(error) + ' At ' + str(datetime.now()) + '\r\n')

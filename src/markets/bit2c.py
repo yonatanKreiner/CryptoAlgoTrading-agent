@@ -7,7 +7,8 @@ from ..utils.proxy import Proxy
 
 
 class Bit2cClient:
-    def __init__(self, base_url, key, secret):
+    def __init__(self, logger, base_url, key, secret):
+        self.logger = logger
         self.key = key
         self.secret = secret
         self.base_url = base_url
@@ -29,7 +30,6 @@ class Bit2cClient:
         nonce = int(time.time())
 
         if nonce <= self.last_nonce:
-            #nonce += 1
             nonce = self.last_nonce + 1
 
         self.last_nonce = nonce
@@ -46,7 +46,7 @@ class Bit2cClient:
             elif method == 'POST':
                 res = self.proxy.safe_post(url=self.base_url + url, data=params_with_nonce, headers=headers, timeout=10)
         except Exception as e:
-            print('bit2c query: ' + url + ' exception\n' + str(e))
+            self.logger.log_error(e)
 
         return res.json()
 

@@ -5,11 +5,11 @@ from ..utils.logger import Logger
 
 
 class MarketAPI:
-    def __init__(self, db, config):
+    def __init__(self, db, logger, config):
         self.offline = config['offline']
         self.did_bid = False
-        self.logger = Logger(config, db)
-        self.client = Bit2cClient('https://bit2c.co.il',
+        self.logger = logger
+        self.client = Bit2cClient(self.logger, 'https://bit2c.co.il',
             '340f106f-4e61-4a58-b4f0-9112b5f75b9b',
             'A88B7FB7FAC26C8B89A46277FB0E505E21758C43A4E5F02CA6AAC3BC7C5A6B2B')
         
