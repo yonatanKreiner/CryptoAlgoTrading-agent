@@ -29,6 +29,9 @@ class Trader:
         self.bid_fiat_price = 0
         self.market_api = MarketAPI(self.db, self.logger, config)
 
+        # temp variable
+        self.file_name = ""
+
         if self.offline:
             self.offline_transactions = {  # We are going to use it as a dictionary of documents of offline transactions
                 'minimum_buy_ratio_difference': config['minimum_buy_ratio_difference'],
@@ -79,6 +82,11 @@ class Trader:
             self.ratio_manager.add_ratio(ratio)
 
             if not initialization:
+                if not self.agent.can_buy and not self.offline and self.file_name != "":
+                    with open('./csv/' + self.file_name +'.csv', 'a', encoding='UTF-8') as tickers_file:
+                        tickers_file.writerow(destination_prices.values())
+
+
                 if self.agent.can_buy and \
                         self.ratio_manager.average_ratio() - ratio > self.agent.minimum_buy_ratio_difference:
                     if not self.did_bid:
@@ -94,6 +102,11 @@ class Trader:
                         self.did_bid = self.market_api.bid(self.money / self.bid_price, self.bid_fiat_price, self.did_bid)
 
                     if self.did_bid and self.market_api.did_buy_from_bid():
+                        self.file_name = str(time.time())
+                        if self.offline
+                            with open('./csv/' + self.file_name +'.csv', 'a', encoding='UTF-8') as tickers_file:
+                                tickers_file.write("last,bid,ask\n")
+
                         money = self.money
 
                         if self.offline:
@@ -124,6 +137,8 @@ class Trader:
                         self.coins = 0
                         self.agent.can_buy = True
                         self.logger.log_sell(self.agent.source_market, coins, self.money, source_prices['bid'])
+
+                        self.file_name = ""
 
                         if self.offline:
                             self.offline_transactions['transactions'][-1]['sell'] = {

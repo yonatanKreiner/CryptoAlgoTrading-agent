@@ -29,5 +29,5 @@
   "sampling_time": 3,
   "ratios_time_length": 24,
   "stop_loss_percentage": 3,
-  "offline": false
+  "offline": true
 }

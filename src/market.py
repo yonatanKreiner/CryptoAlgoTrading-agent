@@ -22,7 +22,7 @@ class Market:
             self.index = 0
 
     def __initialize_prices(self):
-        self.db_data = [x for x in self.db.get_tickers(self.market.lower(), sort=1)]
+        self.db_data = [x for x in self.db.get_tickers(self.market.lower(), sort=1, limit=100000)]
         self.object_count = len(self.db_data)
 
     def get_prices(self):
