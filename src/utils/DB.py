@@ -6,7 +6,7 @@ from pymongo import errors
 class DB:
     def __init__(self, config):
         self.client = pymongo.MongoClient(
-            'mongodb://bitteamisrael:Ariel241096@ds135667-a0.mlab.com:35667,ds135667-a1.mlab.com:35667/bitteamdb?replicaSet=rs-ds135667')
+            'MONGO_PATH')
     
     def get_tickers(self, collection, sort = -1, limit = 0):
         return self.client.bitteamdb[collection].find({}, 
